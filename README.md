@@ -8,6 +8,7 @@ A RESTful API service for managing expenses built with Fastify, TypeScript, and 
 - ✅ TypeScript for type safety
 - ✅ Prisma ORM for database operations
 - ✅ Fastify web framework for high performance
+- ✅ Swagger/OpenAPI documentation
 - ✅ Comprehensive test suite with Jest
 - ✅ Docker support for containerization
 - ✅ CI/CD pipeline with GitHub Actions
@@ -34,10 +35,20 @@ A RESTful API service for managing expenses built with Fastify, TypeScript, and 
    npm run db:setup
    ```
 
-4. **Start development server:**
+4. **Seed the database (optional):**
+   ```bash
+   npm run db:seed
+   ```
+
+5. **Start development server:**
    ```bash
    npm run dev
    ```
+
+6. **Access the application:**
+   - API: http://localhost:3000
+   - Health check: http://localhost:3000/health
+   - API Documentation: http://localhost:3000/docs
 
 ### Docker Development
 
@@ -54,9 +65,10 @@ A RESTful API service for managing expenses built with Fastify, TypeScript, and 
 ## Available Scripts
 
 ### Development
-- `npm run dev` - Start development server with hot reload
+- `npm run dev` - Start development server
 - `npm run build` - Build TypeScript to JavaScript
 - `npm start` - Start production server
+- `npm run watch` - Watch TypeScript files for changes
 
 ### Testing
 - `npm test` - Run all tests
@@ -67,6 +79,7 @@ A RESTful API service for managing expenses built with Fastify, TypeScript, and 
 - `npm run prisma:generate` - Generate Prisma client
 - `npm run prisma:migrate` - Run database migrations
 - `npm run db:setup` - Generate client and run migrations
+- `npm run db:seed` - Seed database with sample data
 
 ### Docker
 - `npm run docker:up` - Start development environment with database
@@ -80,19 +93,30 @@ The project includes a GitHub Actions workflow that:
 - ✅ **Runs on every push and pull request**
 - ✅ **Automated checks:**
   - Install dependencies
-  - Generate Prisma client  
+  - Generate Prisma client
+  - Run linting (if configured)
   - Run test suite
   - Build application
   - Upload test coverage to Codecov
 
+## API Documentation
+
+The API includes interactive documentation powered by Swagger/OpenAPI:
+
+- **Swagger UI**: http://localhost:3000/docs
+- **OpenAPI JSON**: http://localhost:3000/docs/json
+
 ## API Endpoints
 
+### Health
 - `GET /health` - Health check endpoint
-- `GET /v1/expenses` - Get all expenses
-- `POST /v1/expenses` - Create new expense
-- `GET /v1/expenses/:id` - Get expense by ID
-- `PUT /v1/expenses/:id` - Update expense
-- `DELETE /v1/expenses/:id` - Delete expense
+
+### Expenses
+- `GET /api/v1/expenses` - Get all expenses
+- `POST /api/v1/expenses` - Create new expense
+- `GET /api/v1/expenses/:id` - Get expense by ID
+- `PATCH /api/v1/expenses/:id` - Update expense (partial)
+- `DELETE /api/v1/expenses/:id` - Delete expense
 
 ## Health Check
 
@@ -105,6 +129,31 @@ The application includes a health endpoint at `/health` that returns:
   "uptime": 123.456,
   "environment": "development"
 }
+```
+
+## Project Structure
+
+```
+expense-svc/
+├── src/
+│   ├── app.ts              # Fastify app configuration
+│   ├── server.ts           # Server entry point
+│   ├── routes/
+│   │   ├── health.ts       # Health check routes
+│   │   └── expenses.ts     # Expense CRUD routes
+│   └── repositories/
+│       └── expenseRepo.ts  # Database operations
+├── prisma/
+│   ├── schema.prisma       # Database schema
+│   ├── migrations/         # Database migrations
+│   └── seed.ts            # Database seeding
+├── tests/
+│   ├── integration/        # Integration tests
+│   ├── repositories/       # Repository tests
+│   └── setup.ts           # Test configuration
+├── docker-compose.yml      # Docker services
+├── Dockerfile             # Container configuration
+└── package.json           # Dependencies and scripts
 ```
 
 ## Environment Variables

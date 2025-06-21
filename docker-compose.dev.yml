@@ -4,21 +4,19 @@ services:
   app:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.dev
+      target: development
     ports:
       - "3000:3000"
     environment:
-      - NODE_ENV=production
+      - NODE_ENV=development
       - DATABASE_URL=postgresql://expense_user:expense_pass@db:5432/expense_db
+    volumes:
+      - .:/app
+      - /app/node_modules
     depends_on:
       - db
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "node", "healthcheck.js"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
+    command: npm run dev
 
   db:
     image: postgres:15-alpine
@@ -29,8 +27,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-    restart: unless-stopped
+      - postgres_dev_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U expense_user -d expense_db"]
       interval: 10s
@@ -38,4 +35,4 @@ services:
       retries: 5
 
 volumes:
-  postgres_data:
+  postgres_dev_data: 

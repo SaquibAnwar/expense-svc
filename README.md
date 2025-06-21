@@ -43,16 +43,12 @@ A RESTful API service for managing expenses built with Fastify, TypeScript, and 
 
 1. **Start with Docker Compose:**
    ```bash
-   # Development environment
-   npm run docker:dev
-
-   # Production environment
-   npm run docker:prod
+   npm run docker:up
    ```
 
 2. **Stop services:**
    ```bash
-   npm run docker:stop
+   npm run docker:down
    ```
 
 ## Available Scripts
@@ -73,51 +69,21 @@ A RESTful API service for managing expenses built with Fastify, TypeScript, and 
 - `npm run db:setup` - Generate client and run migrations
 
 ### Docker
-- `npm run docker:build` - Build Docker image
-- `npm run docker:run` - Run Docker container
-- `npm run docker:dev` - Start development environment
-- `npm run docker:prod` - Start production environment
-- `npm run docker:stop` - Stop all containers
+- `npm run docker:up` - Start development environment with database
+- `npm run docker:down` - Stop all containers
 
 ## CI/CD Pipeline
 
 The project includes a GitHub Actions workflow that:
 
-1. **Runs on every push and pull request**
-2. **Tests on multiple Node.js versions** (18.x, 20.x)
-3. **Runs the following checks:**
-   - Install dependencies
-   - Generate Prisma client
-   - Run linting (if available)
-   - Run test suite
-   - Build application
-   - Upload test coverage to Codecov
-
-4. **Builds and pushes Docker image** (on main/master branch)
-   - Multi-platform build (linux/amd64, linux/arm64)
-   - Automated tagging with branch name and SHA
-   - Pushes to Docker Hub
-
-### Setting up CI/CD
-
-1. **Set up Docker Hub secrets in GitHub:**
-   - Go to repository Settings → Secrets and variables → Actions
-   - Add the following secrets:
-     - `DOCKER_USERNAME` - Your Docker Hub username
-     - `DOCKER_PASSWORD` - Your Docker Hub password or access token
-
-2. **Optional: Set up Codecov:**
-   - Sign up at [codecov.io](https://codecov.io)
-   - Connect your GitHub repository
-   - No additional secrets needed for public repos
-
-### Workflow Files
-
-- `.github/workflows/ci.yml` - Main CI/CD pipeline
-- `Dockerfile` - Production Docker image
-- `Dockerfile.dev` - Development Docker image
-- `docker-compose.yml` - Production environment
-- `docker-compose.dev.yml` - Development environment
+- ✅ **Tests on multiple Node.js versions** (18.x, 20.x)
+- ✅ **Runs on every push and pull request**
+- ✅ **Automated checks:**
+  - Install dependencies
+  - Generate Prisma client  
+  - Run test suite
+  - Build application
+  - Upload test coverage to Codecov
 
 ## API Endpoints
 

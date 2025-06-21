@@ -1,12 +1,23 @@
 // src/repositories/expenseRepo.ts
-import { PrismaClient, Prisma } from '../generated/prisma';
+import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
+interface CreateExpenseData {
+  title: string;
+  amount: number;
+  userId: number;
+  paidAt?: Date;
+}
+
+interface UpdateExpenseData {
+  title?: string;
+  amount?: number;
+  paidAt?: Date;
+}
+
 /** Create a new expense */
-export async function createExpense(
-  data: Prisma.ExpenseUncheckedCreateInput
-) {
+export async function createExpense(data: CreateExpenseData) {
   return prisma.expense.create({ data });
 }
 
@@ -16,10 +27,7 @@ export async function getExpense(id: number) {
 }
 
 /** Update an expense (partial fields allowed) */
-export async function updateExpense(
-  id: number,
-  data: Prisma.ExpenseUncheckedUpdateInput
-) {
+export async function updateExpense(id: number, data: UpdateExpenseData) {
   return prisma.expense.update({ where: { id }, data });
 }
 
@@ -30,5 +38,6 @@ export async function deleteExpense(id: number) {
 
 /** List all expenses (latest first) */
 export async function listExpenses() {
+  console.log('DEBUG: listExpenses function called');
   return prisma.expense.findMany({ orderBy: { id: 'desc' } });
 }

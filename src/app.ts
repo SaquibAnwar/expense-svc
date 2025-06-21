@@ -2,6 +2,7 @@ import fastify from 'fastify'
 import { PrismaClient } from '@prisma/client'
 import healthRoute from './routes/health.js'
 import expensesRoute from './routes/expenses.js'
+import usersRoute from './routes/users.js'
 
 // Initialize Prisma client
 export const prisma = new PrismaClient()
@@ -28,6 +29,8 @@ async function createApp() {
       servers: [{ url: 'http://localhost:3000' }],
       tags: [
         { name: 'health', description: 'Health check endpoints' },
+        { name: 'auth', description: 'Authentication endpoints' },
+        { name: 'users', description: 'User management endpoints' },
         { name: 'expenses', description: 'Expense management endpoints' }
       ]
     }
@@ -45,6 +48,7 @@ async function createApp() {
 
   // Register routes
   await app.register(healthRoute)
+  await app.register(usersRoute, { prefix: '/api/v1' })
   await app.register(expensesRoute, { prefix: '/api/v1' })
 
   // Graceful shutdown

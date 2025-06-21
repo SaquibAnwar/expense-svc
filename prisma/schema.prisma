@@ -1,0 +1,31 @@
+// Learn more: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/* ───────────────────────
+   Domain models
+   ─────────────────────── */
+
+model User {
+  id        Int       @id @default(autoincrement())
+  email     String    @unique
+  name      String
+  expenses  Expense[]
+}
+
+model Expense {
+  id        Int      @id @default(autoincrement())
+  title     String
+  amount    Decimal
+  paidAt    DateTime @default(now())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+}

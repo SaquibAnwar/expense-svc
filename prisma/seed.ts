@@ -10,6 +10,10 @@ async function main() {
     create: {
       email: 'test@example.com',
       name: 'Test User',
+      username: 'testuser',
+      provider: 'local',
+      isEmailVerified: true,
+      isActive: true
     },
   })
 

@@ -14,10 +14,31 @@ datasource db {
    ─────────────────────── */
 
 model User {
-  id        Int       @id @default(autoincrement())
-  email     String    @unique
-  name      String
-  expenses  Expense[]
+  id          Int      @id @default(autoincrement())
+  email       String   @unique
+  name        String
+  username    String?  @unique // Optional username for display
+  password    String?  // Nullable for OAuth users
+  avatar      String?  // Profile picture URL
+  phoneNumber String?  // Optional phone number
+  
+  // Authentication provider fields (for future OAuth support)
+  provider    String   @default("local") // "local", "google", "facebook", etc.
+  providerId  String?  // OAuth provider's user ID
+  
+  // Account status
+  isEmailVerified Boolean @default(false)
+  isActive        Boolean @default(true)
+  
+  // Timestamps
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  lastLoginAt DateTime?
+  
+  // Relations
+  expenses    Expense[]
+  
+  @@map("users")
 }
 
 model Expense {
@@ -27,4 +48,6 @@ model Expense {
   paidAt    DateTime @default(now())
   userId    Int
   user      User     @relation(fields: [userId], references: [id])
+  
+  @@map("expenses")
 }

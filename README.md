@@ -4,14 +4,22 @@ A RESTful API service for managing expenses built with Fastify, TypeScript, and 
 
 ## Features
 
-- ✅ RESTful API endpoints for expense management
-- ✅ TypeScript for type safety
-- ✅ Prisma ORM for database operations
-- ✅ Fastify web framework for high performance
-- ✅ Swagger/OpenAPI documentation
-- ✅ Comprehensive test suite with Jest
-- ✅ Docker support for containerization
-- ✅ CI/CD pipeline with GitHub Actions
+- ✅ **User Authentication System**
+  - Email/password registration and login
+  - JWT token-based authentication
+  - Secure password hashing with bcrypt
+- ✅ **Secure Expense Management**
+  - User-specific expense tracking
+  - All expense APIs require authentication
+  - Users can only access their own data
+- ✅ **Technical Features**
+  - RESTful API endpoints
+  - TypeScript for type safety
+  - Prisma ORM for database operations
+  - Fastify web framework for high performance
+  - Swagger/OpenAPI documentation
+  - Comprehensive test suite with Jest
+  - Docker support for containerization
 
 ## Quick Start
 
@@ -26,8 +34,10 @@ A RESTful API service for managing expenses built with Fastify, TypeScript, and 
 
 2. **Set up environment:**
    ```bash
-   cp .env.example .env
-   # Edit .env with your database configuration
+   # Create .env file with the following variables:
+   DATABASE_URL="postgresql://expense_user:expense_pass@localhost:5432/expense_db"
+   JWT_SECRET="your-super-secure-secret-key-here"
+   PORT=3000
    ```
 
 3. **Set up database:**
@@ -101,22 +111,28 @@ The project includes a GitHub Actions workflow that:
 
 ## API Documentation
 
-The API includes interactive documentation powered by Swagger/OpenAPI:
+For complete API documentation including all endpoints, authentication requirements, and usage examples, visit the interactive Swagger documentation:
 
-- **Swagger UI**: http://localhost:3000/docs
-- **OpenAPI JSON**: http://localhost:3000/docs/json
+- **Swagger UI**: `{baseUrl}/docs`
+- **OpenAPI JSON**: `{baseUrl}/docs/json`
 
-## API Endpoints
+*In local development, you can use `http://localhost:3000/docs`*
 
-### Health
-- `GET /health` - Health check endpoint
+The API includes:
+- **Authentication endpoints** (registration, login)
+- **User management** (profile management)
+- **Expense management** (CRUD operations, user-specific)
+- **Health check** endpoint
 
-### Expenses
-- `GET /api/v1/expenses` - Get all expenses
-- `POST /api/v1/expenses` - Create new expense
-- `GET /api/v1/expenses/:id` - Get expense by ID
-- `PATCH /api/v1/expenses/:id` - Update expense (partial)
-- `DELETE /api/v1/expenses/:id` - Delete expense
+All expense endpoints require JWT authentication.
+
+## Security Features
+
+- **Password Requirements**: 8+ characters, uppercase, lowercase, number
+- **JWT Authentication**: 7-day token expiration
+- **Data Isolation**: Users can only access their own expenses
+- **Password Hashing**: Bcrypt with salt rounds
+- **Input Validation**: Email, password, and username validation
 
 ## Health Check
 
@@ -136,30 +152,33 @@ The application includes a health endpoint at `/health` that returns:
 ```
 expense-svc/
 ├── src/
-│   ├── app.ts              # Fastify app configuration
-│   ├── server.ts           # Server entry point
+│   ├── app.ts                  # Fastify app configuration
+│   ├── server.ts               # Server entry point
 │   ├── routes/
-│   │   ├── health.ts       # Health check routes
-│   │   └── expenses.ts     # Expense CRUD routes
-│   └── repositories/
-│       └── expenseRepo.ts  # Database operations
+│   │   ├── health.ts           # Health check routes
+│   │   ├── users.ts            # User auth and profile routes
+│   │   └── expenses.ts         # Authenticated expense CRUD routes
+│   ├── repositories/
+│   │   ├── userRepo.ts         # User database operations
+│   │   └── expenseRepo.ts      # Expense database operations
+│   └── utils/
+│       ├── auth.ts             # JWT and validation utilities
+│       └── middleware.ts       # Authentication middleware
 ├── prisma/
-│   ├── schema.prisma       # Database schema
-│   ├── migrations/         # Database migrations
-│   └── seed.ts            # Database seeding
-├── tests/
-│   ├── integration/        # Integration tests
-│   ├── repositories/       # Repository tests
-│   └── setup.ts           # Test configuration
-├── docker-compose.yml      # Docker services
-├── Dockerfile             # Container configuration
-└── package.json           # Dependencies and scripts
+│   ├── schema.prisma           # Database schema (Users + Expenses)
+│   ├── migrations/             # Database migrations
+│   └── seed.ts                # Database seeding
+├── tests/                      # Test suites
+├── docker-compose.yml          # Docker services
+├── Dockerfile                 # Container configuration
+└── package.json               # Dependencies and scripts
 ```
 
 ## Environment Variables
 
 - `NODE_ENV` - Environment (development, production, test)
 - `DATABASE_URL` - PostgreSQL connection string
+- `JWT_SECRET` - Secret key for JWT token signing (required)
 - `PORT` - Server port (default: 3000)
 
 ## Contributing

@@ -1,6 +1,6 @@
-# Expense Service
+# Expense Sharing Service
 
-A RESTful API service for managing expenses built with Fastify, TypeScript, and Prisma.
+A RESTful API service for managing shared expenses and splitting costs among users, built with Fastify, TypeScript, and Prisma. Designed for building expense sharing and group cost management applications.
 
 ## Features
 
@@ -8,12 +8,16 @@ A RESTful API service for managing expenses built with Fastify, TypeScript, and 
   - Email/password registration and login
   - JWT token-based authentication
   - Secure password hashing with bcrypt
-- ✅ **Secure Expense Management**
-  - User-specific expense tracking
-  - All expense APIs require authentication
-  - Users can only access their own data
+  - Extensible for OAuth providers (Google, Facebook, etc.)
+- ✅ **User Management**
+  - User profiles with avatars and contact info
+  - Public and private user profiles
+  - Account status management
+- ✅ **Expense Management**
+  - Create, read, update, delete expenses
+  - Link expenses to users
+  - Expense categorization and tracking
 - ✅ **Technical Features**
-  - RESTful API endpoints
   - TypeScript for type safety
   - Prisma ORM for database operations
   - Fastify web framework for high performance
@@ -52,7 +56,7 @@ A RESTful API service for managing expenses built with Fastify, TypeScript, and 
 
 5. **Start development server:**
    ```bash
-   npm run dev
+   npm start
    ```
 
 6. **Access the application:**
@@ -71,6 +75,13 @@ A RESTful API service for managing expenses built with Fastify, TypeScript, and 
    ```bash
    npm run docker:down
    ```
+
+## Password Requirements
+
+- Minimum 8 characters
+- At least one lowercase letter
+- At least one uppercase letter  
+- At least one number
 
 ## Available Scripts
 
@@ -95,57 +106,28 @@ A RESTful API service for managing expenses built with Fastify, TypeScript, and 
 - `npm run docker:up` - Start development environment with database
 - `npm run docker:down` - Stop all containers
 
-## CI/CD Pipeline
+## Database Schema
 
-The project includes a GitHub Actions workflow that:
+### Users
+- Authentication (email/password, OAuth ready)
+- Profile information (name, username, avatar, phone)
+- Account status and timestamps
+- Provider tracking for future OAuth integration
 
-- ✅ **Tests on multiple Node.js versions** (18.x, 20.x)
-- ✅ **Runs on every push and pull request**
-- ✅ **Automated checks:**
-  - Install dependencies
-  - Generate Prisma client
-  - Run linting (if configured)
-  - Run test suite
-  - Build application
-  - Upload test coverage to Codecov
+### Expenses
+- Basic expense tracking linked to users
+- Amount, title, and date tracking
+- Ready for expansion to support splitting
 
-## API Documentation
+## Future Roadmap (Expense Sharing Features)
 
-For complete API documentation including all endpoints, authentication requirements, and usage examples, visit the interactive Swagger documentation:
-
-- **Swagger UI**: `{baseUrl}/docs`
-- **OpenAPI JSON**: `{baseUrl}/docs/json`
-
-*In local development, you can use `http://localhost:3000/docs`*
-
-The API includes:
-- **Authentication endpoints** (registration, login)
-- **User management** (profile management)
-- **Expense management** (CRUD operations, user-specific)
-- **Health check** endpoint
-
-All expense endpoints require JWT authentication.
-
-## Security Features
-
-- **Password Requirements**: 8+ characters, uppercase, lowercase, number
-- **JWT Authentication**: 7-day token expiration
-- **Data Isolation**: Users can only access their own expenses
-- **Password Hashing**: Bcrypt with salt rounds
-- **Input Validation**: Email, password, and username validation
-
-## Health Check
-
-The application includes a health endpoint at `/health` that returns:
-
-```json
-{
-  "status": "ok",
-  "timestamp": "2024-01-01T00:00:00.000Z",
-  "uptime": 123.456,
-  "environment": "development"
-}
-```
+- 🔄 **Groups/Parties** - Create groups for shared expenses
+- 🔄 **Expense Splitting** - Split expenses equally, by amount, or percentage
+- 🔄 **Settlement Tracking** - Calculate who owes whom
+- 🔄 **Friend System** - Add friends for easier group creation
+- 🔄 **Categories** - Categorize expenses (food, travel, utilities)
+- 🔄 **OAuth Integration** - Google, Facebook sign-in
+- 🔄 **Notifications** - Email/push notifications for expenses and settlements
 
 ## Project Structure
 
@@ -157,15 +139,14 @@ expense-svc/
 │   ├── routes/
 │   │   ├── health.ts           # Health check routes
 │   │   ├── users.ts            # User auth and profile routes
-│   │   └── expenses.ts         # Authenticated expense CRUD routes
+│   │   └── expenses.ts         # Expense CRUD routes
 │   ├── repositories/
 │   │   ├── userRepo.ts         # User database operations
 │   │   └── expenseRepo.ts      # Expense database operations
 │   └── utils/
-│       ├── auth.ts             # JWT and validation utilities
-│       └── middleware.ts       # Authentication middleware
+│       └── auth.ts             # JWT and validation utilities
 ├── prisma/
-│   ├── schema.prisma           # Database schema (Users + Expenses)
+│   ├── schema.prisma           # Database schema
 │   ├── migrations/             # Database migrations
 │   └── seed.ts                # Database seeding
 ├── tests/                      # Test suites
@@ -178,8 +159,29 @@ expense-svc/
 
 - `NODE_ENV` - Environment (development, production, test)
 - `DATABASE_URL` - PostgreSQL connection string
-- `JWT_SECRET` - Secret key for JWT token signing (required)
+- `JWT_SECRET` - Secret key for JWT token signing
 - `PORT` - Server port (default: 3000)
+
+## Security Features
+
+- **Password Hashing** - Bcrypt with salt rounds
+- **JWT Authentication** - Secure token-based auth
+- **Input Validation** - Email, password, and username validation
+- **SQL Injection Protection** - Prisma ORM parameterized queries
+- **Data Sanitization** - Safe user data responses (no password exposure)
+
+## API Documentation
+
+For complete API documentation including all endpoints, authentication requirements, and usage examples, visit the interactive Swagger documentation:
+
+- **Swagger UI**: `{baseUrl}/docs`
+- **OpenAPI JSON**: `{baseUrl}/docs/json`
+
+All endpoints are documented with:
+- Request/response schemas
+- Authentication requirements
+- Example requests and responses
+- Error handling
 
 ## Contributing
 

@@ -1,5 +1,6 @@
 import { FastifyPluginAsync } from 'fastify'
 import { prisma } from '../app.js'
+import { authenticate, authHeaderSchema } from '../utils/middleware.js'
 
 interface ExpenseParams {
   id: string
@@ -8,7 +9,6 @@ interface ExpenseParams {
 interface CreateExpenseBody {
   title: string
   amount: number
-  userId: number
 }
 
 interface UpdateExpenseBody {
@@ -17,15 +17,17 @@ interface UpdateExpenseBody {
 }
 
 const expensesRoute: FastifyPluginAsync = async (fastify) => {
-  // GET /expenses - List all expenses
+  // GET /expenses - List user's expenses
   fastify.get('/expenses', {
+    preHandler: [authenticate],
     schema: {
       tags: ['expenses'],
-      summary: 'List all expenses',
-      description: 'Retrieve a list of all expenses',
+      summary: 'List authenticated user\'s expenses',
+      description: 'Retrieve a list of expenses for the authenticated user',
+      headers: authHeaderSchema,
       response: {
         200: {
-          description: 'List of expenses',
+          description: 'List of user expenses',
           type: 'array',
           items: {
             type: 'object',
@@ -43,21 +45,28 @@ const expensesRoute: FastifyPluginAsync = async (fastify) => {
   }, async (request, reply) => {
     try {
       const expenses = await prisma.expense.findMany({
+        where: { userId: request.user!.id },
         orderBy: { id: 'desc' }
       })
       return expenses
     } catch (error) {
       fastify.log.error('Error fetching expenses:', error)
-      return reply.code(500).send({ error: 'Failed to fetch expenses' })
+      return reply.code(500).send({ 
+        message: 'Failed to fetch expenses',
+        error: 'Internal Server Error',
+        statusCode: 500
+      })
     }
   })
 
-  // GET /expenses/:id - Get expense by ID
+  // GET /expenses/:id - Get user's expense by ID
   fastify.get<{ Params: ExpenseParams }>('/expenses/:id', {
+    preHandler: [authenticate],
     schema: {
       tags: ['expenses'],
-      summary: 'Get expense by ID',
-      description: 'Retrieve a specific expense by its ID',
+      summary: 'Get user\'s expense by ID',
+      description: 'Retrieve a specific expense by its ID (only accessible by the owner)',
+      headers: authHeaderSchema,
       params: {
         type: 'object',
         properties: {
@@ -90,7 +99,7 @@ const expensesRoute: FastifyPluginAsync = async (fastify) => {
     }
   }, async (request, reply) => {
     try {
-      const id = parseInt(request.params.id, 10)
+      const id = parseInt((request.params as ExpenseParams).id, 10)
       
       if (isNaN(id)) {
         return reply.code(400).send({
@@ -100,8 +109,11 @@ const expensesRoute: FastifyPluginAsync = async (fastify) => {
         })
       }
 
-      const expense = await prisma.expense.findUnique({
-        where: { id }
+      const expense = await prisma.expense.findFirst({
+        where: { 
+          id,
+          userId: request.user!.id // Ensure user can only access their own expenses
+        }
       })
 
       if (!expense) {
@@ -115,24 +127,29 @@ const expensesRoute: FastifyPluginAsync = async (fastify) => {
       return expense
     } catch (error) {
       fastify.log.error('Error fetching expense:', error)
-      return reply.code(500).send({ error: 'Failed to fetch expense' })
+      return reply.code(500).send({ 
+        message: 'Failed to fetch expense',
+        error: 'Internal Server Error',
+        statusCode: 500
+      })
     }
   })
 
   // POST /expenses - Create new expense
   fastify.post<{ Body: CreateExpenseBody }>('/expenses', {
+    preHandler: [authenticate],
     schema: {
       tags: ['expenses'],
       summary: 'Create a new expense',
-      description: 'Create a new expense record',
+      description: 'Create a new expense record for the authenticated user',
+      headers: authHeaderSchema,
       body: {
         type: 'object',
         properties: {
           title: { type: 'string', description: 'Expense title' },
-          amount: { type: 'number', description: 'Expense amount' },
-          userId: { type: 'integer', description: 'User ID who made the expense' }
+          amount: { type: 'number', description: 'Expense amount' }
         },
-        required: ['title', 'amount', 'userId']
+        required: ['title', 'amount']
       },
       response: {
         201: {
@@ -150,25 +167,35 @@ const expensesRoute: FastifyPluginAsync = async (fastify) => {
     }
   }, async (request, reply) => {
     try {
-      const { title, amount, userId } = request.body
+      const { title, amount } = request.body as CreateExpenseBody
 
-      const expense = await prisma.expense.create({
-        data: { title, amount, userId }
-      })
+              const expense = await prisma.expense.create({
+          data: { 
+            title, 
+            amount, 
+            userId: request.user!.id // Use authenticated user's ID
+          }
+        })
 
       return reply.code(201).send(expense)
     } catch (error) {
       fastify.log.error('Error creating expense:', error)
-      return reply.code(500).send({ error: 'Failed to create expense' })
+      return reply.code(500).send({ 
+        message: 'Failed to create expense',
+        error: 'Internal Server Error',
+        statusCode: 500
+      })
     }
   })
 
   // PATCH /expenses/:id - Update expense
   fastify.patch<{ Params: ExpenseParams; Body: UpdateExpenseBody }>('/expenses/:id', {
+    preHandler: [authenticate],
     schema: {
       tags: ['expenses'],
       summary: 'Update an expense',
-      description: 'Update an existing expense by ID',
+      description: 'Update an existing expense by ID (only accessible by the owner)',
+      headers: authHeaderSchema,
       params: {
         type: 'object',
         properties: {
@@ -208,7 +235,7 @@ const expensesRoute: FastifyPluginAsync = async (fastify) => {
     }
   }, async (request, reply) => {
     try {
-      const id = parseInt(request.params.id, 10)
+      const id = parseInt((request.params as ExpenseParams).id, 10)
       
       if (isNaN(id)) {
         return reply.code(400).send({
@@ -218,34 +245,48 @@ const expensesRoute: FastifyPluginAsync = async (fastify) => {
         })
       }
 
-      const updateData = request.body
+      const updateData = request.body as UpdateExpenseBody
 
-      const expense = await prisma.expense.update({
-        where: { id },
+      const expense = await prisma.expense.updateMany({
+        where: { 
+          id,
+          userId: request.user!.id // Ensure user can only update their own expenses
+        },
         data: updateData
       })
 
-      return expense
-    } catch (error: any) {
-      if (error.code === 'P2025') {
+      if (expense.count === 0) {
         return reply.code(404).send({
           message: 'Expense not found',
           error: 'Not Found',
           statusCode: 404
         })
       }
-      
+
+      // Fetch and return the updated expense
+      const updatedExpense = await prisma.expense.findFirst({
+        where: { id, userId: request.user!.id }
+      })
+
+      return updatedExpense
+    } catch (error) {
       fastify.log.error('Error updating expense:', error)
-      return reply.code(500).send({ error: 'Failed to update expense' })
+      return reply.code(500).send({ 
+        message: 'Failed to update expense',
+        error: 'Internal Server Error',
+        statusCode: 500
+      })
     }
   })
 
   // DELETE /expenses/:id - Delete expense
   fastify.delete<{ Params: ExpenseParams }>('/expenses/:id', {
+    preHandler: [authenticate],
     schema: {
       tags: ['expenses'],
       summary: 'Delete an expense',
-      description: 'Delete an existing expense by ID',
+      description: 'Delete an existing expense by ID (only accessible by the owner)',
+      headers: authHeaderSchema,
       params: {
         type: 'object',
         properties: {
@@ -274,7 +315,7 @@ const expensesRoute: FastifyPluginAsync = async (fastify) => {
     }
   }, async (request, reply) => {
     try {
-      const id = parseInt(request.params.id, 10)
+      const id = parseInt((request.params as ExpenseParams).id, 10)
       
       if (isNaN(id)) {
         return reply.code(400).send({
@@ -284,22 +325,29 @@ const expensesRoute: FastifyPluginAsync = async (fastify) => {
         })
       }
 
-      await prisma.expense.delete({
-        where: { id }
+      const deletedExpense = await prisma.expense.deleteMany({
+        where: { 
+          id,
+          userId: request.user!.id // Ensure user can only delete their own expenses
+        }
       })
 
-      return { message: 'Expense deleted successfully' }
-    } catch (error: any) {
-      if (error.code === 'P2025') {
+      if (deletedExpense.count === 0) {
         return reply.code(404).send({
           message: 'Expense not found',
           error: 'Not Found',
           statusCode: 404
         })
       }
-      
+
+      return { message: 'Expense deleted successfully' }
+    } catch (error) {
       fastify.log.error('Error deleting expense:', error)
-      return reply.code(500).send({ error: 'Failed to delete expense' })
+      return reply.code(500).send({ 
+        message: 'Failed to delete expense',
+        error: 'Internal Server Error',
+        statusCode: 500
+      })
     }
   })
 }

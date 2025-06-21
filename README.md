@@ -172,10 +172,10 @@ expense-svc/
 
 ## API Documentation
 
-The API includes interactive documentation powered by Swagger/OpenAPI:
+For complete API documentation including all endpoints, authentication requirements, and usage examples, visit the interactive Swagger documentation:
 
-- **Swagger UI**: http://localhost:3000/docs
-- **OpenAPI JSON**: http://localhost:3000/docs/json
+- **Swagger UI**: `{baseUrl}/docs`
+- **OpenAPI JSON**: `{baseUrl}/docs/json`
 
 All endpoints are documented with:
 - Request/response schemas

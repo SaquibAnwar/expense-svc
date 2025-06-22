@@ -431,7 +431,7 @@ const usersRoute: FastifyPluginAsync = async (fastify) => {
       });
 
       // Return safe user data
-      const { password, ...safeUser } = updatedUser;
+      const { password, ...safeUser } = updatedUser; // eslint-disable-line @typescript-eslint/no-unused-vars, no-unused-vars
       return safeUser;
 
     } catch (error) {

@@ -64,7 +64,7 @@ export async function authenticate(request: FastifyRequest, reply: FastifyReply)
       provider: payload.provider
     };
 
-  } catch (error) {
+  } catch {
     return reply.code(401).send({
       message: 'Authentication failed',
       error: 'Unauthorized', 

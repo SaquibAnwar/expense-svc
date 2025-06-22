@@ -30,11 +30,65 @@ jobs:
     - name: Generate Prisma Client
       run: npx prisma generate
     
-    - name: Run linting
-      run: npm run lint || echo "No lint script found, skipping..."
+    - name: Check code formatting
+      run: npm run format:check
     
-    - name: Run tests
-      run: npm test
+    - name: Run linting
+      run: npm run lint
+    
+    - name: Validate test coverage for new code
+      run: |
+        if npm run validate:tests 2>/dev/null; then
+          echo "✅ Coverage validation passed"
+        else
+          echo "⚠️ Coverage validation script not found or failed, continuing..."
+        fi
+    
+    - name: Run unit tests with coverage
+      run: npm run test:ci
+      
+    - name: Check coverage thresholds
+      run: |
+        echo "Checking if coverage meets minimum requirements..."
+        npm run test:required || { echo "❌ Coverage requirements not met"; exit 1; }
+        
+    - name: Validate all source files have tests
+      run: |
+        echo "Validating test coverage for all source files..."
+        missing_tests=()
+        
+        # Check repository files
+        for file in src/repositories/*.ts; do
+          filename=$(basename "$file" .ts)
+          if [ ! -f "tests/repositories/${filename}.test.ts" ]; then
+            missing_tests+=("Repository: $file")
+          fi
+        done
+        
+        # Check route files (skip checking - routes are integration tested)
+        echo "✅ Route files are integration tested, skipping unit test requirement"
+        
+        # Check utility files
+        for file in src/utils/*.ts; do
+          filename=$(basename "$file" .ts)
+          if [ ! -f "tests/utils/${filename}.test.ts" ]; then
+            missing_tests+=("Utility: $file")
+          fi
+        done
+        
+        # Skip app.ts and server.ts as they are entry points, not business logic
+        echo "✅ Skipping app.ts and server.ts (entry points, integration tested)"
+        
+        if [ ${#missing_tests[@]} -gt 0 ]; then
+          echo "❌ Missing tests for the following files:"
+          printf '%s\n' "${missing_tests[@]}"
+          echo ""
+          echo "🚫 Repository and utility files must have corresponding unit tests!"
+          echo "📝 Please create test files following the pattern: tests/<module>/<filename>.test.ts"
+          exit 1
+        else
+          echo "✅ All required source files have corresponding test files!"
+        fi
     
     - name: Run build
       run: npm run build
@@ -44,6 +98,8 @@ jobs:
       if: matrix.node-version == '20.x'
       with:
         file: ./coverage/lcov.info
+        token: ${{ secrets.CODECOV_TOKEN }}
         fail_ci_if_error: false
+      continue-on-error: true
 
  

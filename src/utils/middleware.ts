@@ -27,23 +27,23 @@ export interface AuthenticatedRequest extends FastifyRequest {
 export async function authenticate(request: FastifyRequest, reply: FastifyReply) {
   try {
     const authHeader = request.headers.authorization;
-    
+
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return reply.code(401).send({
         message: 'Authorization header is required',
         error: 'Unauthorized',
-        statusCode: 401
+        statusCode: 401,
       });
     }
 
     const token = authHeader.substring(7);
     const payload = verifyToken(token);
-    
+
     if (!payload) {
       return reply.code(401).send({
         message: 'Invalid or expired token',
         error: 'Unauthorized',
-        statusCode: 401
+        statusCode: 401,
       });
     }
 
@@ -53,7 +53,7 @@ export async function authenticate(request: FastifyRequest, reply: FastifyReply)
       return reply.code(401).send({
         message: 'User not found or inactive',
         error: 'Unauthorized',
-        statusCode: 401
+        statusCode: 401,
       });
     }
 
@@ -61,14 +61,13 @@ export async function authenticate(request: FastifyRequest, reply: FastifyReply)
     request.user = {
       id: payload.userId,
       email: payload.email,
-      provider: payload.provider
+      provider: payload.provider,
     };
-
-  } catch (error) {
+  } catch {
     return reply.code(401).send({
       message: 'Authentication failed',
-      error: 'Unauthorized', 
-      statusCode: 401
+      error: 'Unauthorized',
+      statusCode: 401,
     });
   }
 }
@@ -79,10 +78,10 @@ export async function authenticate(request: FastifyRequest, reply: FastifyReply)
 export const authHeaderSchema = {
   type: 'object',
   properties: {
-    authorization: { 
-      type: 'string', 
-      description: 'Bearer token for authentication'
-    }
+    authorization: {
+      type: 'string',
+      description: 'Bearer token for authentication',
+    },
   },
-  required: ['authorization']
-}; 
+  required: ['authorization'],
+};

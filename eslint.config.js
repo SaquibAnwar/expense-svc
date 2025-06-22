@@ -50,6 +50,10 @@ module.exports = [
       'node_modules/',
       'prisma/migrations/',
       '*.js',
+      '*.d.ts',
+      'coverage/',
+      '.env',
+      '.env.*',
     ],
   },
 ]; 

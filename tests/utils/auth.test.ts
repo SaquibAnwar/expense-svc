@@ -134,7 +134,7 @@ describe('Auth Utils', () => {
         'invalid-email',
         '@example.com',
         'test@',
-        'test..test@example.com',
+        'test@domain',  // No TLD
         ''
       ];
 

@@ -1,6 +1,7 @@
 import { FastifyPluginAsync } from 'fastify';
 import { prisma } from '../app.js';
 import { authenticate, authHeaderSchema } from '../utils/middleware.js';
+import { isGroupMember } from '../repositories/groupRepo.js';
 
 interface ExpenseParams {
   id: string;
@@ -8,7 +9,9 @@ interface ExpenseParams {
 
 interface CreateExpenseBody {
   title: string;
+  description?: string;
   amount: number;
+  groupId?: number;
 }
 
 interface UpdateExpenseBody {
@@ -157,7 +160,9 @@ const expensesRoute: FastifyPluginAsync = async fastify => {
           type: 'object',
           properties: {
             title: { type: 'string', description: 'Expense title' },
+            description: { type: 'string', description: 'Expense description' },
             amount: { type: 'number', description: 'Expense amount' },
+            groupId: { type: 'integer', description: 'Group ID (optional, for group expenses)' },
           },
           required: ['title', 'amount'],
         },
@@ -178,13 +183,44 @@ const expensesRoute: FastifyPluginAsync = async fastify => {
     },
     async (request, reply) => {
       try {
-        const { title, amount } = request.body as CreateExpenseBody;
+        const { title, description, amount, groupId } = request.body as CreateExpenseBody;
+
+        // If groupId is provided, validate user is a member
+        if (groupId) {
+          const isMember = await isGroupMember(groupId, request.user!.id);
+          if (!isMember) {
+            return reply.code(403).send({
+              message: 'Access denied. You are not a member of this group.',
+              error: 'Forbidden',
+              statusCode: 403,
+            });
+          }
+        }
 
         const expense = await prisma.expense.create({
           data: {
             title,
+            description,
             amount,
-            userId: request.user!.id, // Use authenticated user's ID
+            userId: request.user!.id,
+            groupId: groupId || null,
+          },
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                username: true,
+              },
+            },
+            group: groupId
+              ? {
+                  select: {
+                    id: true,
+                    name: true,
+                  },
+                }
+              : false,
           },
         });
 

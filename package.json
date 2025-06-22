@@ -25,6 +25,7 @@
     "format": "prettier --write \"src/**/*.ts\" \"tests/**/*.ts\"",
     "format:check": "prettier --check \"src/**/*.ts\" \"tests/**/*.ts\"",
     "pre-commit": "npm run format && npm run lint && npm run test:unit && npm run validate:tests",
+    "test:setup": "scripts/setup-test-db.sh",
     "docker:up": "docker-compose up --build",
     "docker:down": "docker-compose down"
   },

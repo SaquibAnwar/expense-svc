@@ -3,6 +3,7 @@ import { PrismaClient } from '@prisma/client';
 import healthRoute from './routes/health.js';
 import expensesRoute from './routes/expenses.js';
 import usersRoute from './routes/users.js';
+import groupsRoute from './routes/groups.js';
 
 // Initialize Prisma client
 export const prisma = new PrismaClient();
@@ -32,6 +33,7 @@ async function createApp() {
         { name: 'auth', description: 'Authentication endpoints' },
         { name: 'users', description: 'User management endpoints' },
         { name: 'expenses', description: 'Expense management endpoints' },
+        { name: 'groups', description: 'Group management endpoints' },
       ],
     },
   });
@@ -50,6 +52,7 @@ async function createApp() {
   await app.register(healthRoute);
   await app.register(usersRoute, { prefix: '/api/v1' });
   await app.register(expensesRoute, { prefix: '/api/v1' });
+  await app.register(groupsRoute, { prefix: '/api/v1' });
 
   // Graceful shutdown
   const gracefulShutdown = async () => {

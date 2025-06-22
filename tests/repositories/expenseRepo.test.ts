@@ -1,107 +1,283 @@
-import { PrismaClient } from '@prisma/client';
+// Mock Prisma client
+const mockPrisma = {
+  expense: {
+    create: jest.fn(),
+    findUnique: jest.fn(),
+    findMany: jest.fn(),
+    update: jest.fn(),
+    delete: jest.fn(),
+  }
+};
 
-// Mock Prisma client for testing
-jest.mock('@prisma/client');
+jest.mock('@prisma/client', () => ({
+  PrismaClient: jest.fn().mockImplementation(() => mockPrisma)
+}));
+
+jest.mock('../../src/app', () => ({
+  prisma: mockPrisma
+}));
+
+import {
+  createExpense,
+  getExpense,
+  updateExpense,
+  deleteExpense,
+  listExpenses
+} from '../../src/repositories/expenseRepo';
 
 describe('ExpenseRepository', () => {
-  let mockPrisma: jest.Mocked<PrismaClient>;
-
   beforeEach(() => {
-    mockPrisma = {
-      expense: {
-        findMany: jest.fn(),
-        findUnique: jest.fn(),
-        create: jest.fn(),
-        update: jest.fn(),
-        delete: jest.fn(),
-      },
-    } as any;
-  });
-
-  afterEach(() => {
+    // Reset all mocks
     jest.clearAllMocks();
-  });
-
-  describe('getAllExpenses', () => {
-    it('should return all expenses', async () => {
-      // Mock implementation would go here
-      const mockExpenses = [
-        {
-          id: 1,
-          description: 'Lunch',
-          amount: 15.50,
-          category: 'Food',
-          date: new Date(),
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        },
-      ];
-
-      mockPrisma.expense.findMany.mockResolvedValue(mockExpenses);
-
-      // Test implementation will be added when repository is implemented
-      expect(mockPrisma.expense.findMany).toBeDefined();
-    });
   });
 
   describe('createExpense', () => {
     it('should create a new expense', async () => {
-      const newExpense = {
-        description: 'Coffee',
-        amount: 4.50,
-        category: 'Food',
-        date: new Date(),
+      const expenseData = {
+        title: 'Test Expense',
+        amount: 100.50,
+        userId: 1
       };
 
-      const createdExpense = {
+      const expectedExpense = {
         id: 1,
-        ...newExpense,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        ...expenseData,
+        paidAt: new Date()
       };
 
-      mockPrisma.expense.create.mockResolvedValue(createdExpense);
+      mockPrisma.expense.create.mockResolvedValue(expectedExpense);
 
-      // Test implementation will be added when repository is implemented
-      expect(mockPrisma.expense.create).toBeDefined();
+      const result = await createExpense(expenseData);
+
+      expect(mockPrisma.expense.create).toHaveBeenCalledWith({
+        data: expenseData
+      });
+      expect(result).toEqual(expectedExpense);
+    });
+
+    it('should create expense with paidAt date when provided', async () => {
+      const paidAt = new Date('2023-01-15');
+      const expenseData = {
+        title: 'Test Expense',
+        amount: 100.50,
+        userId: 1,
+        paidAt
+      };
+
+      const expectedExpense = {
+        id: 1,
+        ...expenseData
+      };
+
+      mockPrisma.expense.create.mockResolvedValue(expectedExpense);
+
+      const result = await createExpense(expenseData);
+
+      expect(mockPrisma.expense.create).toHaveBeenCalledWith({
+        data: expenseData
+      });
+      expect(result).toEqual(expectedExpense);
+    });
+
+    it('should handle database errors', async () => {
+      const expenseData = {
+        title: 'Test Expense',
+        amount: 100.50,
+        userId: 1
+      };
+
+      mockPrisma.expense.create.mockRejectedValue(new Error('Database error'));
+
+      await expect(createExpense(expenseData)).rejects.toThrow('Database error');
+    });
+  });
+
+  describe('getExpense', () => {
+    it('should get expense by id', async () => {
+      const expectedExpense = {
+        id: 1,
+        title: 'Test Expense',
+        amount: 100.50,
+        userId: 1,
+        paidAt: new Date()
+      };
+
+      mockPrisma.expense.findUnique.mockResolvedValue(expectedExpense);
+
+      const result = await getExpense(1);
+
+      expect(mockPrisma.expense.findUnique).toHaveBeenCalledWith({
+        where: { id: 1 }
+      });
+      expect(result).toEqual(expectedExpense);
+    });
+
+    it('should return null when expense not found', async () => {
+      mockPrisma.expense.findUnique.mockResolvedValue(null);
+
+      const result = await getExpense(999);
+
+      expect(mockPrisma.expense.findUnique).toHaveBeenCalledWith({
+        where: { id: 999 }
+      });
+      expect(result).toBeNull();
+    });
+
+    it('should handle database errors', async () => {
+      mockPrisma.expense.findUnique.mockRejectedValue(new Error('Database error'));
+
+      await expect(getExpense(1)).rejects.toThrow('Database error');
     });
   });
 
   describe('updateExpense', () => {
-    it('should update an existing expense', async () => {
-      const updatedExpense = {
-        id: 1,
-        description: 'Updated lunch',
-        amount: 18.00,
-        category: 'Food',
-        date: new Date(),
-        createdAt: new Date(),
-        updatedAt: new Date(),
+    it('should update expense with partial data', async () => {
+      const updateData = {
+        title: 'Updated Expense',
+        amount: 150.75
       };
 
-      mockPrisma.expense.update.mockResolvedValue(updatedExpense);
+      const expectedExpense = {
+        id: 1,
+        ...updateData,
+        userId: 1,
+        paidAt: new Date()
+      };
 
-      // Test implementation will be added when repository is implemented
-      expect(mockPrisma.expense.update).toBeDefined();
+      mockPrisma.expense.update.mockResolvedValue(expectedExpense);
+
+      const result = await updateExpense(1, updateData);
+
+      expect(mockPrisma.expense.update).toHaveBeenCalledWith({
+        where: { id: 1 },
+        data: updateData
+      });
+      expect(result).toEqual(expectedExpense);
+    });
+
+    it('should update only title', async () => {
+      const updateData = { title: 'New Title' };
+
+      const expectedExpense = {
+        id: 1,
+        title: 'New Title',
+        amount: 100.50,
+        userId: 1,
+        paidAt: new Date()
+      };
+
+      mockPrisma.expense.update.mockResolvedValue(expectedExpense);
+
+      const result = await updateExpense(1, updateData);
+
+      expect(mockPrisma.expense.update).toHaveBeenCalledWith({
+        where: { id: 1 },
+        data: updateData
+      });
+      expect(result).toEqual(expectedExpense);
+    });
+
+    it('should update paidAt date', async () => {
+      const newPaidAt = new Date('2023-02-01');
+      const updateData = { paidAt: newPaidAt };
+
+      const expectedExpense = {
+        id: 1,
+        title: 'Test Expense',
+        amount: 100.50,
+        userId: 1,
+        paidAt: newPaidAt
+      };
+
+      mockPrisma.expense.update.mockResolvedValue(expectedExpense);
+
+      const result = await updateExpense(1, updateData);
+
+      expect(mockPrisma.expense.update).toHaveBeenCalledWith({
+        where: { id: 1 },
+        data: updateData
+      });
+      expect(result).toEqual(expectedExpense);
+    });
+
+    it('should handle database errors', async () => {
+      mockPrisma.expense.update.mockRejectedValue(new Error('Database error'));
+
+      await expect(updateExpense(1, { title: 'New Title' })).rejects.toThrow('Database error');
     });
   });
 
   describe('deleteExpense', () => {
-    it('should delete an expense', async () => {
+    it('should delete expense by id', async () => {
       const deletedExpense = {
         id: 1,
-        description: 'Lunch',
-        amount: 15.50,
-        category: 'Food',
-        date: new Date(),
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        title: 'Test Expense',
+        amount: 100.50,
+        userId: 1,
+        paidAt: new Date()
       };
 
       mockPrisma.expense.delete.mockResolvedValue(deletedExpense);
 
-      // Test implementation will be added when repository is implemented
-      expect(mockPrisma.expense.delete).toBeDefined();
+      const result = await deleteExpense(1);
+
+      expect(mockPrisma.expense.delete).toHaveBeenCalledWith({
+        where: { id: 1 }
+      });
+      expect(result).toEqual(deletedExpense);
+    });
+
+    it('should handle database errors', async () => {
+      mockPrisma.expense.delete.mockRejectedValue(new Error('Database error'));
+
+      await expect(deleteExpense(1)).rejects.toThrow('Database error');
+    });
+  });
+
+  describe('listExpenses', () => {
+    it('should return all expenses ordered by id desc', async () => {
+      const mockExpenses = [
+        {
+          id: 2,
+          title: 'Recent Expense',
+          amount: 75.25,
+          userId: 1,
+          paidAt: new Date()
+        },
+        {
+          id: 1,
+          title: 'Older Expense',
+          amount: 50.00,
+          userId: 1,
+          paidAt: new Date()
+        }
+      ];
+
+      mockPrisma.expense.findMany.mockResolvedValue(mockExpenses);
+
+      const result = await listExpenses();
+
+      expect(mockPrisma.expense.findMany).toHaveBeenCalledWith({
+        orderBy: { id: 'desc' }
+      });
+      expect(result).toEqual(mockExpenses);
+    });
+
+    it('should return empty array when no expenses exist', async () => {
+      mockPrisma.expense.findMany.mockResolvedValue([]);
+
+      const result = await listExpenses();
+
+      expect(mockPrisma.expense.findMany).toHaveBeenCalledWith({
+        orderBy: { id: 'desc' }
+      });
+      expect(result).toEqual([]);
+    });
+
+    it('should handle database errors', async () => {
+      mockPrisma.expense.findMany.mockRejectedValue(new Error('Database error'));
+
+      await expect(listExpenses()).rejects.toThrow('Database error');
     });
   });
 }); 

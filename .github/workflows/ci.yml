@@ -33,8 +33,56 @@ jobs:
     - name: Run linting
       run: npm run lint || echo "No lint script found, skipping..."
     
-    - name: Run tests
-      run: npm test
+    - name: Validate test coverage for new code
+      run: npm run validate:tests || echo "Coverage validation script not found, continuing..."
+    
+    - name: Run unit tests with coverage
+      run: npm run test:ci
+      
+    - name: Check coverage thresholds
+      run: |
+        echo "Checking if coverage meets minimum requirements..."
+        npm run test:required
+        
+    - name: Validate all source files have tests
+      run: |
+        echo "Validating test coverage for all source files..."
+        missing_tests=()
+        
+        # Check repository files
+        for file in src/repositories/*.ts; do
+          filename=$(basename "$file" .ts)
+          if [ ! -f "tests/repositories/${filename}.test.ts" ]; then
+            missing_tests+=("Repository: $file")
+          fi
+        done
+        
+        # Check route files
+        for file in src/routes/*.ts; do
+          filename=$(basename "$file" .ts)
+          if [ ! -f "tests/routes/${filename}.test.ts" ]; then
+            missing_tests+=("Route: $file")
+          fi
+        done
+        
+        # Check utility files
+        for file in src/utils/*.ts; do
+          filename=$(basename "$file" .ts)
+          if [ ! -f "tests/utils/${filename}.test.ts" ]; then
+            missing_tests+=("Utility: $file")
+          fi
+        done
+        
+        if [ ${#missing_tests[@]} -gt 0 ]; then
+          echo "❌ Missing tests for the following files:"
+          printf '%s\n' "${missing_tests[@]}"
+          echo ""
+          echo "🚫 All source files must have corresponding unit tests!"
+          echo "📝 Please create test files following the pattern: tests/<module>/<filename>.test.ts"
+          exit 1
+        else
+          echo "✅ All source files have corresponding test files!"
+        fi
     
     - name: Run build
       run: npm run build
@@ -44,6 +92,6 @@ jobs:
       if: matrix.node-version == '20.x'
       with:
         file: ./coverage/lcov.info
-        fail_ci_if_error: false
+        fail_ci_if_error: true
 
  

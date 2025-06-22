@@ -15,6 +15,12 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
+    "test:ci": "jest --ci --coverage --watchAll=false",
+    "test:unit": "jest --testPathPattern=\"tests/.*\\.test\\.(ts|js)$\" --testPathIgnorePatterns=\"tests/integration/\"",
+    "test:integration": "jest --testPathPattern=tests/integration/",
+    "test:required": "jest --coverage --coverageThreshold='{\"global\":{\"branches\":80,\"functions\":80,\"lines\":80,\"statements\":80}}'",
+    "validate:tests": "node scripts/validate-test-coverage.js",
+    "pre-commit": "npm run test:unit && npm run validate:tests",
     "docker:up": "docker-compose up --build",
     "docker:down": "docker-compose down"
   },

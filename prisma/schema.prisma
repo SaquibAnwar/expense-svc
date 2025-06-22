@@ -36,18 +36,66 @@ model User {
   lastLoginAt DateTime?
   
   // Relations
-  expenses    Expense[]
+  expenses       Expense[]
+  createdGroups  Group[]       @relation("GroupCreator")
+  groupMembers   GroupMember[]
   
   @@map("users")
 }
 
+model Group {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String?
+  avatar      String?  // Group avatar/image URL
+  isActive    Boolean  @default(true)
+  
+  // Timestamps
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  createdBy   Int
+  creator     User          @relation("GroupCreator", fields: [createdBy], references: [id])
+  members     GroupMember[]
+  expenses    Expense[]
+  
+  @@map("groups")
+}
+
+model GroupMember {
+  id       Int           @id @default(autoincrement())
+  role     GroupMemberRole @default(MEMBER)
+  joinedAt DateTime      @default(now())
+  
+  // Relations
+  groupId  Int
+  userId   Int
+  group    Group         @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user     User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Ensure unique user per group
+  @@unique([groupId, userId])
+  @@map("group_members")
+}
+
 model Expense {
-  id        Int      @id @default(autoincrement())
-  title     String
-  amount    Decimal
-  paidAt    DateTime @default(now())
-  userId    Int
-  user      User     @relation(fields: [userId], references: [id])
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String?  // Optional expense description
+  amount      Decimal
+  paidAt      DateTime @default(now())
+  
+  // Relations
+  userId      Int
+  user        User     @relation(fields: [userId], references: [id])
+  groupId     Int?     // Optional - expense can be personal or group
+  group       Group?   @relation(fields: [groupId], references: [id])
   
   @@map("expenses")
+}
+
+enum GroupMemberRole {
+  ADMIN
+  MEMBER
 }

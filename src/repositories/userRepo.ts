@@ -57,33 +57,36 @@ export async function getUserById(id: number): Promise<User | null> {
     include: {
       expenses: {
         orderBy: { paidAt: 'desc' },
-        take: 10 // Only include recent expenses
-      }
-    }
+        take: 10, // Only include recent expenses
+      },
+    },
   });
 }
 
 /** Get user by email */
 export async function getUserByEmail(email: string): Promise<User | null> {
   return prisma.user.findUnique({
-    where: { email }
+    where: { email },
   });
 }
 
 /** Get user by username */
 export async function getUserByUsername(username: string): Promise<User | null> {
   return prisma.user.findUnique({
-    where: { username }
+    where: { username },
   });
 }
 
 /** Get user by provider and provider ID (for OAuth) */
-export async function getUserByProvider(provider: string, providerId: string): Promise<User | null> {
+export async function getUserByProvider(
+  provider: string,
+  providerId: string
+): Promise<User | null> {
   return prisma.user.findFirst({
     where: {
       provider,
-      providerId
-    }
+      providerId,
+    },
   });
 }
 
@@ -93,15 +96,15 @@ export async function updateUser(id: number, data: UpdateUserData): Promise<User
     where: { id },
     data: {
       ...data,
-      updatedAt: new Date()
-    }
+      updatedAt: new Date(),
+    },
   });
 }
 
 /** Verify user password (for local authentication) */
 export async function verifyPassword(email: string, password: string): Promise<User | null> {
   const user = await prisma.user.findUnique({
-    where: { email }
+    where: { email },
   });
 
   if (!user || !user.password) {
@@ -116,7 +119,7 @@ export async function verifyPassword(email: string, password: string): Promise<U
   // Update last login time
   await prisma.user.update({
     where: { id: user.id },
-    data: { lastLoginAt: new Date() }
+    data: { lastLoginAt: new Date() },
   });
 
   return user;
@@ -126,7 +129,7 @@ export async function verifyPassword(email: string, password: string): Promise<U
 export async function isEmailTaken(email: string): Promise<boolean> {
   const user = await prisma.user.findUnique({
     where: { email },
-    select: { id: true }
+    select: { id: true },
   });
   return !!user;
 }
@@ -135,7 +138,7 @@ export async function isEmailTaken(email: string): Promise<boolean> {
 export async function isUsernameTaken(username: string): Promise<boolean> {
   const user = await prisma.user.findUnique({
     where: { username },
-    select: { id: true }
+    select: { id: true },
   });
   return !!user;
 }
@@ -161,12 +164,12 @@ export async function getUserProfile(id: number) {
           id: true,
           title: true,
           amount: true,
-          paidAt: true
+          paidAt: true,
         },
         orderBy: { paidAt: 'desc' },
-        take: 5
-      }
-    }
+        take: 5,
+      },
+    },
   });
 }
 
@@ -184,9 +187,9 @@ export async function listUsers(skip: number = 0, take: number = 20) {
       isEmailVerified: true,
       isActive: true,
       createdAt: true,
-      lastLoginAt: true
+      lastLoginAt: true,
     },
-    orderBy: { createdAt: 'desc' }
+    orderBy: { createdAt: 'desc' },
   });
 }
 
@@ -196,8 +199,8 @@ export async function deactivateUser(id: number): Promise<User> {
     where: { id },
     data: {
       isActive: false,
-      updatedAt: new Date()
-    }
+      updatedAt: new Date(),
+    },
   });
 }
 
@@ -207,7 +210,7 @@ export async function reactivateUser(id: number): Promise<User> {
     where: { id },
     data: {
       isActive: true,
-      updatedAt: new Date()
-    }
+      updatedAt: new Date(),
+    },
   });
-} 
+}

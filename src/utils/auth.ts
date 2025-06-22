@@ -33,7 +33,7 @@ export function generateToken(user: User): string {
   const payload: JwtPayload = {
     userId: user.id,
     email: user.email,
-    provider: user.provider
+    provider: user.provider,
   };
 
   const options: SignOptions = { expiresIn: JWT_EXPIRES_IN };
@@ -60,7 +60,7 @@ export function toSafeUser(user: User): SafeUser {
     provider: user.provider,
     isEmailVerified: user.isEmailVerified,
     createdAt: user.createdAt,
-    updatedAt: user.updatedAt
+    updatedAt: user.updatedAt,
   };
 }
 
@@ -68,7 +68,7 @@ export function toSafeUser(user: User): SafeUser {
 export function createAuthResponse(user: User): AuthResponse {
   return {
     user: toSafeUser(user),
-    token: generateToken(user)
+    token: generateToken(user),
   };
 }
 
@@ -83,19 +83,19 @@ export function isValidPassword(password: string): { valid: boolean; message?: s
   if (password.length < 8) {
     return { valid: false, message: 'Password must be at least 8 characters long' };
   }
-  
+
   if (!/(?=.*[a-z])/.test(password)) {
     return { valid: false, message: 'Password must contain at least one lowercase letter' };
   }
-  
+
   if (!/(?=.*[A-Z])/.test(password)) {
     return { valid: false, message: 'Password must contain at least one uppercase letter' };
   }
-  
+
   if (!/(?=.*\d)/.test(password)) {
     return { valid: false, message: 'Password must contain at least one number' };
   }
-  
+
   return { valid: true };
 }
 
@@ -104,14 +104,17 @@ export function isValidUsername(username: string): { valid: boolean; message?: s
   if (username.length < 3) {
     return { valid: false, message: 'Username must be at least 3 characters long' };
   }
-  
+
   if (username.length > 20) {
     return { valid: false, message: 'Username must be less than 20 characters long' };
   }
-  
+
   if (!/^[a-zA-Z0-9_-]+$/.test(username)) {
-    return { valid: false, message: 'Username can only contain letters, numbers, underscores, and hyphens' };
+    return {
+      valid: false,
+      message: 'Username can only contain letters, numbers, underscores, and hyphens',
+    };
   }
-  
+
   return { valid: true };
-} 
+}

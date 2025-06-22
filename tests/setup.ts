@@ -7,22 +7,24 @@ export const createMockApp = (): FastifyInstance => {
     // Mock different responses based on method and URL
     if (options.method === 'POST' && options.url === '/v1/expenses') {
       // Check if payload has valid data
-      if (options.payload && 
-          options.payload.description && 
-          options.payload.description.trim() !== '' &&
-          options.payload.amount > 0) {
+      if (
+        options.payload &&
+        options.payload.description &&
+        options.payload.description.trim() !== '' &&
+        options.payload.amount > 0
+      ) {
         // Valid POST request
         return Promise.resolve({
           statusCode: 201,
           headers: { 'content-type': 'application/json' },
-          payload: JSON.stringify({ id: 1, ...options.payload })
+          payload: JSON.stringify({ id: 1, ...options.payload }),
         });
       } else {
         // Invalid POST request (empty description, negative amount, etc.)
         return Promise.resolve({
           statusCode: 400,
           headers: { 'content-type': 'application/json' },
-          payload: JSON.stringify({ error: 'Validation error' })
+          payload: JSON.stringify({ error: 'Validation error' }),
         });
       }
     } else if (options.url === '/v1/expenses') {
@@ -30,20 +32,20 @@ export const createMockApp = (): FastifyInstance => {
       return Promise.resolve({
         statusCode: 200,
         headers: { 'content-type': 'application/json' },
-        payload: JSON.stringify([])
+        payload: JSON.stringify([]),
       });
     } else {
       // Unknown route
       return Promise.resolve({
         statusCode: 404,
         headers: { 'content-type': 'application/json' },
-        payload: JSON.stringify({ error: 'Not found' })
+        payload: JSON.stringify({ error: 'Not found' }),
       });
     }
   });
 
   return {
     inject: mockInject,
-    close: jest.fn().mockResolvedValue(undefined)
+    close: jest.fn().mockResolvedValue(undefined),
   } as any;
-}; 
+};

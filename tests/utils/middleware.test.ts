@@ -16,11 +16,11 @@ describe('Middleware', () => {
 
   beforeEach(() => {
     mockRequest = {
-      headers: {}
+      headers: {},
     };
     mockReply = {
       code: jest.fn().mockReturnThis(),
-      send: jest.fn().mockReturnThis()
+      send: jest.fn().mockReturnThis(),
     };
   });
 
@@ -38,13 +38,13 @@ describe('Middleware', () => {
       expect(mockReply.send).toHaveBeenCalledWith({
         message: 'Authorization header is required',
         error: 'Unauthorized',
-        statusCode: 401
+        statusCode: 401,
       });
     });
 
     it('should return 401 when authorization header does not start with Bearer', async () => {
       mockRequest.headers = {
-        authorization: 'Invalid token'
+        authorization: 'Invalid token',
       };
 
       await authenticate(mockRequest as FastifyRequest, mockReply as FastifyReply);
@@ -53,13 +53,13 @@ describe('Middleware', () => {
       expect(mockReply.send).toHaveBeenCalledWith({
         message: 'Authorization header is required',
         error: 'Unauthorized',
-        statusCode: 401
+        statusCode: 401,
       });
     });
 
     it('should return 401 when token is invalid', async () => {
       mockRequest.headers = {
-        authorization: 'Bearer invalid.token'
+        authorization: 'Bearer invalid.token',
       };
       mockedVerifyToken.mockReturnValue(null);
 
@@ -70,18 +70,18 @@ describe('Middleware', () => {
       expect(mockReply.send).toHaveBeenCalledWith({
         message: 'Invalid or expired token',
         error: 'Unauthorized',
-        statusCode: 401
+        statusCode: 401,
       });
     });
 
     it('should return 401 when user does not exist', async () => {
       mockRequest.headers = {
-        authorization: 'Bearer valid.token'
+        authorization: 'Bearer valid.token',
       };
       mockedVerifyToken.mockReturnValue({
         userId: 1,
         email: 'test@example.com',
-        provider: 'local'
+        provider: 'local',
       });
       mockedGetUserById.mockResolvedValue(null);
 
@@ -92,18 +92,18 @@ describe('Middleware', () => {
       expect(mockReply.send).toHaveBeenCalledWith({
         message: 'User not found or inactive',
         error: 'Unauthorized',
-        statusCode: 401
+        statusCode: 401,
       });
     });
 
     it('should return 401 when user is inactive', async () => {
       mockRequest.headers = {
-        authorization: 'Bearer valid.token'
+        authorization: 'Bearer valid.token',
       };
       mockedVerifyToken.mockReturnValue({
         userId: 1,
         email: 'test@example.com',
-        provider: 'local'
+        provider: 'local',
       });
       mockedGetUserById.mockResolvedValue({
         id: 1,
@@ -119,7 +119,7 @@ describe('Middleware', () => {
         isActive: false, // inactive user
         createdAt: new Date(),
         updatedAt: new Date(),
-        lastLoginAt: null
+        lastLoginAt: null,
       });
 
       await authenticate(mockRequest as FastifyRequest, mockReply as FastifyReply);
@@ -128,18 +128,18 @@ describe('Middleware', () => {
       expect(mockReply.send).toHaveBeenCalledWith({
         message: 'User not found or inactive',
         error: 'Unauthorized',
-        statusCode: 401
+        statusCode: 401,
       });
     });
 
     it('should add user to request when authentication is successful', async () => {
       mockRequest.headers = {
-        authorization: 'Bearer valid.token'
+        authorization: 'Bearer valid.token',
       };
       const mockPayload = {
         userId: 1,
         email: 'test@example.com',
-        provider: 'local'
+        provider: 'local',
       };
       mockedVerifyToken.mockReturnValue(mockPayload);
       mockedGetUserById.mockResolvedValue({
@@ -156,7 +156,7 @@ describe('Middleware', () => {
         isActive: true,
         createdAt: new Date(),
         updatedAt: new Date(),
-        lastLoginAt: null
+        lastLoginAt: null,
       });
 
       await authenticate(mockRequest as FastifyRequest, mockReply as FastifyReply);
@@ -164,7 +164,7 @@ describe('Middleware', () => {
       expect(mockRequest.user).toEqual({
         id: 1,
         email: 'test@example.com',
-        provider: 'local'
+        provider: 'local',
       });
       expect(mockReply.code).not.toHaveBeenCalled();
       expect(mockReply.send).not.toHaveBeenCalled();
@@ -172,7 +172,7 @@ describe('Middleware', () => {
 
     it('should return 401 when an error occurs during authentication', async () => {
       mockRequest.headers = {
-        authorization: 'Bearer valid.token'
+        authorization: 'Bearer valid.token',
       };
       mockedVerifyToken.mockImplementation(() => {
         throw new Error('Database error');
@@ -184,8 +184,8 @@ describe('Middleware', () => {
       expect(mockReply.send).toHaveBeenCalledWith({
         message: 'Authentication failed',
         error: 'Unauthorized',
-        statusCode: 401
+        statusCode: 401,
       });
     });
   });
-}); 
+});

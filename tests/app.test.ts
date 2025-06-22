@@ -1,14 +1,13 @@
 // Mock PrismaClient
 const mockAppPrisma = {
-  $disconnect: jest.fn().mockResolvedValue(undefined)
+  $disconnect: jest.fn().mockResolvedValue(undefined),
 };
 
 jest.mock('@prisma/client', () => ({
-  PrismaClient: jest.fn().mockImplementation(() => mockAppPrisma)
+  PrismaClient: jest.fn().mockImplementation(() => mockAppPrisma),
 }));
 
 describe('App', () => {
-
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -43,24 +42,22 @@ describe('App', () => {
         info: {
           title: 'Expense Service API',
           version: '1.0.0',
-          description: 'REST API for managing personal expenses'
+          description: 'REST API for managing personal expenses',
         },
-        servers: [
-          { url: 'http://localhost:3000' }
-        ],
+        servers: [{ url: 'http://localhost:3000' }],
         tags: [
           { name: 'health', description: 'Health check endpoints' },
           { name: 'auth', description: 'Authentication endpoints' },
           { name: 'users', description: 'User management endpoints' },
-          { name: 'expenses', description: 'Expense management endpoints' }
-        ]
+          { name: 'expenses', description: 'Expense management endpoints' },
+        ],
       };
 
       expect(openApiConfig.info.title).toBe('Expense Service API');
       expect(openApiConfig.info.version).toBe('1.0.0');
       expect(openApiConfig.servers).toContainEqual({ url: 'http://localhost:3000' });
       expect(openApiConfig.tags.length).toBe(4);
-      
+
       const tagNames = openApiConfig.tags.map(tag => tag.name);
       expect(tagNames).toContain('health');
       expect(tagNames).toContain('auth');
@@ -72,7 +69,7 @@ describe('App', () => {
   describe('Route structure validation', () => {
     it('should have health route structure', () => {
       const healthRoutes = ['/health', '/health/ready'];
-      
+
       healthRoutes.forEach(route => {
         expect(route).toMatch(/^\/health/);
       });
@@ -80,7 +77,7 @@ describe('App', () => {
 
     it('should have auth route structure', () => {
       const authRoutes = ['/api/v1/auth/register', '/api/v1/auth/login'];
-      
+
       authRoutes.forEach(route => {
         expect(route).toMatch(/^\/api\/v1\/auth/);
       });
@@ -88,7 +85,7 @@ describe('App', () => {
 
     it('should have user route structure', () => {
       const userRoutes = ['/api/v1/profile'];
-      
+
       userRoutes.forEach(route => {
         expect(route).toMatch(/^\/api\/v1/);
       });
@@ -96,7 +93,7 @@ describe('App', () => {
 
     it('should have expense route structure', () => {
       const expenseRoutes = ['/api/v1/expenses', '/api/v1/expenses/:id'];
-      
+
       expenseRoutes.forEach(route => {
         expect(route).toMatch(/^\/api\/v1\/expenses/);
       });
@@ -109,7 +106,7 @@ describe('App', () => {
         { code: 400, message: 'Bad Request' },
         { code: 401, message: 'Unauthorized' },
         { code: 404, message: 'Not Found' },
-        { code: 500, message: 'Internal Server Error' }
+        { code: 500, message: 'Internal Server Error' },
       ];
 
       errorTypes.forEach(error => {
@@ -133,8 +130,8 @@ describe('App', () => {
     it('should have proper Fastify configuration structure', () => {
       const fastifyConfig = {
         logger: {
-          level: process.env.LOG_LEVEL || 'info'
-        }
+          level: process.env.LOG_LEVEL || 'info',
+        },
       };
 
       expect(fastifyConfig.logger).toBeDefined();
@@ -144,11 +141,11 @@ describe('App', () => {
     it('should validate plugin registration order', () => {
       const pluginOrder = [
         'swagger',
-        'swagger-ui', 
+        'swagger-ui',
         'sensible',
         'health-routes',
         'user-routes',
-        'expense-routes'
+        'expense-routes',
       ];
 
       // Test that we have a logical plugin registration order
@@ -156,4 +153,4 @@ describe('App', () => {
       expect(pluginOrder.indexOf('sensible')).toBeLessThan(pluginOrder.indexOf('health-routes'));
     });
   });
-}); 
+});

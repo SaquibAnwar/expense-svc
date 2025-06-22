@@ -30,7 +30,7 @@ describe('User Routes', () => {
     username: 'testuser',
     provider: 'local',
     isEmailVerified: false,
-    createdAt: new Date()
+    createdAt: new Date(),
   };
 
   beforeEach(() => {
@@ -43,12 +43,12 @@ describe('User Routes', () => {
         email: 'test@example.com',
         password: 'Password123',
         name: 'Test User',
-        username: 'testuser'
+        username: 'testuser',
       };
 
       const mockAuthResponse = {
         user: mockUser,
-        token: 'jwt.token.here'
+        token: 'jwt.token.here',
       };
 
       mockAuth.isValidEmail.mockReturnValue(true);
@@ -72,22 +72,28 @@ describe('User Routes', () => {
       expect(emailTaken).toBe(false);
       expect(usernameTaken).toBe(false);
 
-      if (emailValid && passwordValid.valid && usernameValid.valid && !emailTaken && !usernameTaken) {
+      if (
+        emailValid &&
+        passwordValid.valid &&
+        usernameValid.valid &&
+        !emailTaken &&
+        !usernameTaken
+      ) {
         const createdUser = await mockUserRepo.createUser({
           email: userData.email,
           password: userData.password,
           name: userData.name,
           username: userData.username,
-          provider: 'local'
+          provider: 'local',
         });
-        
+
         expect(createdUser).toEqual(mockUser);
         expect(mockUserRepo.createUser).toHaveBeenCalledWith({
           email: userData.email,
           password: userData.password,
           name: userData.name,
           username: userData.username,
-          provider: 'local'
+          provider: 'local',
         });
       }
     });
@@ -100,9 +106,9 @@ describe('User Routes', () => {
     });
 
     it('should reject registration with weak password', () => {
-      mockAuth.isValidPassword.mockReturnValue({ 
-        valid: false, 
-        message: 'Password must be at least 8 characters long' 
+      mockAuth.isValidPassword.mockReturnValue({
+        valid: false,
+        message: 'Password must be at least 8 characters long',
       });
 
       const passwordValid = mockAuth.isValidPassword('weak');
@@ -129,12 +135,12 @@ describe('User Routes', () => {
     it('should successfully login with valid credentials', async () => {
       const loginData = {
         email: 'test@example.com',
-        password: 'Password123'
+        password: 'Password123',
       };
 
       const mockAuthResponse = {
         user: mockUser,
-        token: 'jwt.token.here'
+        token: 'jwt.token.here',
       };
 
       mockUserRepo.verifyPassword.mockResolvedValue(mockUser);
@@ -177,7 +183,7 @@ describe('User Routes', () => {
     it('should successfully update user profile', async () => {
       const updateData = {
         name: 'Updated Name',
-        username: 'updateduser'
+        username: 'updateduser',
       };
 
       const updatedUser = { ...mockUser, ...updateData };
@@ -192,23 +198,23 @@ describe('User Routes', () => {
   describe('User Validation Logic', () => {
     it('should validate email format', () => {
       mockAuth.isValidEmail.mockReturnValue(true);
-      
+
       const result = mockAuth.isValidEmail('test@example.com');
       expect(result).toBe(true);
     });
 
     it('should validate password strength', () => {
       mockAuth.isValidPassword.mockReturnValue({ valid: true });
-      
+
       const result = mockAuth.isValidPassword('StrongPassword123');
       expect(result.valid).toBe(true);
     });
 
     it('should validate username format', () => {
       mockAuth.isValidUsername.mockReturnValue({ valid: true });
-      
+
       const result = mockAuth.isValidUsername('validuser');
       expect(result.valid).toBe(true);
     });
   });
-}); 
+});

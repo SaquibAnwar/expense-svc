@@ -38,6 +38,5 @@ export async function deleteExpense(id: number) {
 
 /** List all expenses (latest first) */
 export async function listExpenses() {
-  console.log('DEBUG: listExpenses function called');
   return prisma.expense.findMany({ orderBy: { id: 'desc' } });
 }

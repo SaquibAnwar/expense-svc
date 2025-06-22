@@ -6,15 +6,15 @@ const mockPrisma = {
     findFirst: jest.fn(),
     findMany: jest.fn(),
     update: jest.fn(),
-  }
+  },
 };
 
 jest.mock('@prisma/client', () => ({
-  PrismaClient: jest.fn().mockImplementation(() => mockPrisma)
+  PrismaClient: jest.fn().mockImplementation(() => mockPrisma),
 }));
 
 jest.mock('../../src/app', () => ({
-  prisma: mockPrisma
+  prisma: mockPrisma,
 }));
 
 jest.mock('bcryptjs', () => ({
@@ -26,7 +26,7 @@ import { User } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 import {
   createUser,
-  getUserById,  
+  getUserById,
   getUserByEmail,
   getUserByUsername,
   getUserByProvider,
@@ -37,13 +37,12 @@ import {
   getUserProfile,
   listUsers,
   deactivateUser,
-  reactivateUser
+  reactivateUser,
 } from '../../src/repositories/userRepo';
 
 const mockedBcrypt = bcrypt as jest.Mocked<typeof bcrypt>;
 
 describe('UserRepository', () => {
-
   const mockUser: User = {
     id: 1,
     email: 'test@example.com',
@@ -58,7 +57,7 @@ describe('UserRepository', () => {
     isActive: true,
     createdAt: new Date('2023-01-01'),
     updatedAt: new Date('2023-01-01'),
-    lastLoginAt: null
+    lastLoginAt: null,
   };
 
   beforeEach(() => {
@@ -71,7 +70,7 @@ describe('UserRepository', () => {
         email: 'test@example.com',
         name: 'Test User',
         password: 'password123',
-        provider: 'local'
+        provider: 'local',
       };
 
       const hashedPassword = 'hashedpassword123';
@@ -91,8 +90,8 @@ describe('UserRepository', () => {
           provider: 'local',
           providerId: undefined,
           isEmailVerified: false,
-          password: hashedPassword
-        }
+          password: hashedPassword,
+        },
       });
       expect(result).toEqual(mockUser);
     });
@@ -103,7 +102,7 @@ describe('UserRepository', () => {
         name: 'OAuth User',
         provider: 'google',
         providerId: 'google123',
-        isEmailVerified: true
+        isEmailVerified: true,
       };
 
       mockPrisma.user.create.mockResolvedValue(mockUser);
@@ -120,8 +119,8 @@ describe('UserRepository', () => {
           avatar: undefined,
           provider: 'google',
           providerId: 'google123',
-          isEmailVerified: true
-        }
+          isEmailVerified: true,
+        },
       });
       expect(result).toEqual(mockUser);
     });
@@ -131,7 +130,7 @@ describe('UserRepository', () => {
         email: 'test@example.com',
         name: 'Test User',
         password: 'password123',
-        provider: 'local'
+        provider: 'local',
       };
 
       mockPrisma.user.create.mockRejectedValue(new Error('Database error'));
@@ -144,9 +143,7 @@ describe('UserRepository', () => {
     it('should get user by id with expenses', async () => {
       const userWithExpenses = {
         ...mockUser,
-        expenses: [
-          { id: 1, title: 'Test Expense', amount: 100, paidAt: new Date() }
-        ]
+        expenses: [{ id: 1, title: 'Test Expense', amount: 100, paidAt: new Date() }],
       };
 
       mockPrisma.user.findUnique.mockResolvedValue(userWithExpenses);
@@ -158,9 +155,9 @@ describe('UserRepository', () => {
         include: {
           expenses: {
             orderBy: { paidAt: 'desc' },
-            take: 10
-          }
-        }
+            take: 10,
+          },
+        },
       });
       expect(result).toEqual(userWithExpenses);
     });
@@ -181,7 +178,7 @@ describe('UserRepository', () => {
       const result = await getUserByEmail('test@example.com');
 
       expect(mockPrisma.user.findUnique).toHaveBeenCalledWith({
-        where: { email: 'test@example.com' }
+        where: { email: 'test@example.com' },
       });
       expect(result).toEqual(mockUser);
     });
@@ -202,7 +199,7 @@ describe('UserRepository', () => {
       const result = await getUserByUsername('testuser');
 
       expect(mockPrisma.user.findUnique).toHaveBeenCalledWith({
-        where: { username: 'testuser' }
+        where: { username: 'testuser' },
       });
       expect(result).toEqual(mockUser);
     });
@@ -218,8 +215,8 @@ describe('UserRepository', () => {
       expect(mockPrisma.user.findFirst).toHaveBeenCalledWith({
         where: {
           provider: 'google',
-          providerId: 'google123'
-        }
+          providerId: 'google123',
+        },
       });
       expect(result).toEqual(oauthUser);
     });
@@ -229,7 +226,7 @@ describe('UserRepository', () => {
     it('should update user data', async () => {
       const updateData = {
         name: 'Updated Name',
-        username: 'updateduser'
+        username: 'updateduser',
       };
 
       const updatedUser = { ...mockUser, ...updateData };
@@ -241,8 +238,8 @@ describe('UserRepository', () => {
         where: { id: 1 },
         data: {
           ...updateData,
-          updatedAt: expect.any(Date)
-        }
+          updatedAt: expect.any(Date),
+        },
       });
       expect(result).toEqual(updatedUser);
     });
@@ -257,12 +254,12 @@ describe('UserRepository', () => {
       const result = await verifyPassword('test@example.com', 'password123');
 
       expect(mockPrisma.user.findUnique).toHaveBeenCalledWith({
-        where: { email: 'test@example.com' }
+        where: { email: 'test@example.com' },
       });
       expect(mockedBcrypt.compare).toHaveBeenCalledWith('password123', 'hashedpassword');
       expect(mockPrisma.user.update).toHaveBeenCalledWith({
         where: { id: 1 },
-        data: { lastLoginAt: expect.any(Date) }
+        data: { lastLoginAt: expect.any(Date) },
       });
       expect(result).toEqual(mockUser); // Function returns the original user, not the updated one
     });
@@ -303,7 +300,7 @@ describe('UserRepository', () => {
 
       expect(mockPrisma.user.findUnique).toHaveBeenCalledWith({
         where: { email: 'test@example.com' },
-        select: { id: true }
+        select: { id: true },
       });
       expect(result).toBe(true);
     });
@@ -325,7 +322,7 @@ describe('UserRepository', () => {
 
       expect(mockPrisma.user.findUnique).toHaveBeenCalledWith({
         where: { username: 'testuser' },
-        select: { id: true }
+        select: { id: true },
       });
       expect(result).toBe(true);
     });
@@ -353,7 +350,7 @@ describe('UserRepository', () => {
         createdAt: new Date(),
         updatedAt: new Date(),
         lastLoginAt: null,
-        expenses: []
+        expenses: [],
       };
 
       mockPrisma.user.findUnique.mockResolvedValue(profileData);
@@ -379,12 +376,12 @@ describe('UserRepository', () => {
               id: true,
               title: true,
               amount: true,
-              paidAt: true
+              paidAt: true,
             },
             orderBy: { paidAt: 'desc' },
-            take: 5
-          }
-        }
+            take: 5,
+          },
+        },
       });
       expect(result).toEqual(profileData);
     });
@@ -409,9 +406,9 @@ describe('UserRepository', () => {
           isEmailVerified: true,
           isActive: true,
           createdAt: true,
-          lastLoginAt: true
+          lastLoginAt: true,
         },
-        orderBy: { createdAt: 'desc' }
+        orderBy: { createdAt: 'desc' },
       });
       expect(result).toEqual(usersList);
     });
@@ -425,7 +422,7 @@ describe('UserRepository', () => {
         skip: 0,
         take: 20,
         select: expect.any(Object),
-        orderBy: { createdAt: 'desc' }
+        orderBy: { createdAt: 'desc' },
       });
     });
   });
@@ -441,8 +438,8 @@ describe('UserRepository', () => {
         where: { id: 1 },
         data: {
           isActive: false,
-          updatedAt: expect.any(Date)
-        }
+          updatedAt: expect.any(Date),
+        },
       });
       expect(result).toEqual(deactivatedUser);
     });
@@ -459,10 +456,10 @@ describe('UserRepository', () => {
         where: { id: 1 },
         data: {
           isActive: true,
-          updatedAt: expect.any(Date)
-        }
+          updatedAt: expect.any(Date),
+        },
       });
       expect(result).toEqual(reactivatedUser);
     });
   });
-}); 
+});

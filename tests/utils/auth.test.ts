@@ -8,7 +8,7 @@ import {
   isValidEmail,
   isValidPassword,
   isValidUsername,
-  JwtPayload
+  JwtPayload,
 } from '../../src/utils/auth';
 
 // Mock jwt
@@ -30,7 +30,7 @@ describe('Auth Utils', () => {
     isActive: true,
     createdAt: new Date('2023-01-01'),
     updatedAt: new Date('2023-01-01'),
-    lastLoginAt: null
+    lastLoginAt: null,
   };
 
   afterEach(() => {
@@ -48,7 +48,7 @@ describe('Auth Utils', () => {
         {
           userId: mockUser.id,
           email: mockUser.email,
-          provider: mockUser.provider
+          provider: mockUser.provider,
         },
         expect.any(String),
         { expiresIn: '7d' }
@@ -62,7 +62,7 @@ describe('Auth Utils', () => {
       const mockPayload: JwtPayload = {
         userId: 1,
         email: 'test@example.com',
-        provider: 'local'
+        provider: 'local',
       };
       mockedJwt.verify.mockReturnValue(mockPayload as any);
 
@@ -96,7 +96,7 @@ describe('Auth Utils', () => {
         provider: mockUser.provider,
         isEmailVerified: mockUser.isEmailVerified,
         createdAt: mockUser.createdAt,
-        updatedAt: mockUser.updatedAt
+        updatedAt: mockUser.updatedAt,
       });
       expect(safeUser).not.toHaveProperty('password');
     });
@@ -118,11 +118,7 @@ describe('Auth Utils', () => {
 
   describe('isValidEmail', () => {
     it('should return true for valid emails', () => {
-      const validEmails = [
-        'test@example.com',
-        'user.name@domain.co.uk',
-        'test+tag@example.org'
-      ];
+      const validEmails = ['test@example.com', 'user.name@domain.co.uk', 'test+tag@example.org'];
 
       validEmails.forEach(email => {
         expect(isValidEmail(email)).toBe(true);
@@ -134,8 +130,8 @@ describe('Auth Utils', () => {
         'invalid-email',
         '@example.com',
         'test@',
-        'test@domain',  // No TLD
-        ''
+        'test@domain', // No TLD
+        '',
       ];
 
       invalidEmails.forEach(email => {
@@ -146,11 +142,7 @@ describe('Auth Utils', () => {
 
   describe('isValidPassword', () => {
     it('should return valid for strong passwords', () => {
-      const validPasswords = [
-        'Password123',
-        'StrongP@ss1',
-        'MySecure123'
-      ];
+      const validPasswords = ['Password123', 'StrongP@ss1', 'MySecure123'];
 
       validPasswords.forEach(password => {
         const result = isValidPassword(password);
@@ -161,9 +153,15 @@ describe('Auth Utils', () => {
     it('should return invalid for weak passwords', () => {
       const testCases = [
         { password: 'short', expectedMessage: 'Password must be at least 8 characters long' },
-        { password: 'nouppercase123', expectedMessage: 'Password must contain at least one uppercase letter' },
-        { password: 'NOLOWERCASE123', expectedMessage: 'Password must contain at least one lowercase letter' },
-        { password: 'NoNumbers', expectedMessage: 'Password must contain at least one number' }
+        {
+          password: 'nouppercase123',
+          expectedMessage: 'Password must contain at least one uppercase letter',
+        },
+        {
+          password: 'NOLOWERCASE123',
+          expectedMessage: 'Password must contain at least one lowercase letter',
+        },
+        { password: 'NoNumbers', expectedMessage: 'Password must contain at least one number' },
       ];
 
       testCases.forEach(({ password, expectedMessage }) => {
@@ -176,12 +174,7 @@ describe('Auth Utils', () => {
 
   describe('isValidUsername', () => {
     it('should return valid for good usernames', () => {
-      const validUsernames = [
-        'user123',
-        'test_user',
-        'user-name',
-        'TestUser'
-      ];
+      const validUsernames = ['user123', 'test_user', 'user-name', 'TestUser'];
 
       validUsernames.forEach(username => {
         const result = isValidUsername(username);
@@ -192,9 +185,18 @@ describe('Auth Utils', () => {
     it('should return invalid for bad usernames', () => {
       const testCases = [
         { username: 'ab', expectedMessage: 'Username must be at least 3 characters long' },
-        { username: 'a'.repeat(21), expectedMessage: 'Username must be less than 20 characters long' },
-        { username: 'user@name', expectedMessage: 'Username can only contain letters, numbers, underscores, and hyphens' },
-        { username: 'user space', expectedMessage: 'Username can only contain letters, numbers, underscores, and hyphens' }
+        {
+          username: 'a'.repeat(21),
+          expectedMessage: 'Username must be less than 20 characters long',
+        },
+        {
+          username: 'user@name',
+          expectedMessage: 'Username can only contain letters, numbers, underscores, and hyphens',
+        },
+        {
+          username: 'user space',
+          expectedMessage: 'Username can only contain letters, numbers, underscores, and hyphens',
+        },
       ];
 
       testCases.forEach(({ username, expectedMessage }) => {
@@ -204,4 +206,4 @@ describe('Auth Utils', () => {
       });
     });
   });
-}); 
+});

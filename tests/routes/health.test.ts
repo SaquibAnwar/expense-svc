@@ -1,12 +1,11 @@
 // Mock the health route functionality
 describe('Health Routes', () => {
-  
   describe('GET /health', () => {
     it('should return health status', async () => {
       // Mock the health response structure
       const healthResponse = {
         status: 'ok',
-        timestamp: new Date()
+        timestamp: new Date(),
       };
 
       expect(healthResponse).toHaveProperty('status');
@@ -21,7 +20,7 @@ describe('Health Routes', () => {
       // Mock the readiness response structure
       const readinessResponse = {
         status: 'ready',
-        timestamp: new Date()
+        timestamp: new Date(),
       };
 
       expect(readinessResponse).toHaveProperty('status');
@@ -30,4 +29,4 @@ describe('Health Routes', () => {
       expect(readinessResponse.timestamp).toBeInstanceOf(Date);
     });
   });
-}); 
+});

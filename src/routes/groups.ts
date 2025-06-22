@@ -139,6 +139,118 @@ const groupsRoute: FastifyPluginAsync = async fastify => {
           200: {
             description: 'Group details',
             type: 'object',
+            properties: {
+              id: { type: 'integer', description: 'Group ID' },
+              name: { type: 'string', description: 'Group name' },
+              description: { type: 'string', nullable: true, description: 'Group description' },
+              avatar: { type: 'string', nullable: true, description: 'Group avatar URL' },
+              isActive: { type: 'boolean', description: 'Whether the group is active' },
+              createdAt: {
+                type: 'string',
+                format: 'date-time',
+                description: 'Group creation timestamp',
+              },
+              updatedAt: {
+                type: 'string',
+                format: 'date-time',
+                description: 'Group last update timestamp',
+              },
+              createdBy: { type: 'integer', description: 'Creator user ID' },
+              creator: {
+                type: 'object',
+                description: 'Group creator information',
+                properties: {
+                  id: { type: 'integer' },
+                  name: { type: 'string' },
+                  email: { type: 'string' },
+                  username: { type: 'string', nullable: true },
+                  avatar: { type: 'string', nullable: true },
+                },
+              },
+              members: {
+                type: 'array',
+                description: 'Group members with their roles and user information',
+                items: {
+                  type: 'object',
+                  properties: {
+                    id: { type: 'integer', description: 'Member relationship ID' },
+                    role: { type: 'string', enum: ['ADMIN', 'MEMBER'], description: 'Member role' },
+                    joinedAt: {
+                      type: 'string',
+                      format: 'date-time',
+                      description: 'When the member joined',
+                    },
+                    groupId: { type: 'integer', description: 'Group ID' },
+                    userId: { type: 'integer', description: 'User ID' },
+                    user: {
+                      type: 'object',
+                      description: 'Member user information',
+                      properties: {
+                        id: { type: 'integer' },
+                        name: { type: 'string' },
+                        email: { type: 'string' },
+                        username: { type: 'string', nullable: true },
+                        avatar: { type: 'string', nullable: true },
+                      },
+                    },
+                  },
+                },
+              },
+              expenses: {
+                type: 'array',
+                description: 'Recent group expenses (last 10)',
+                items: {
+                  type: 'object',
+                  properties: {
+                    id: { type: 'integer', description: 'Expense ID' },
+                    title: { type: 'string', description: 'Expense title' },
+                    description: {
+                      type: 'string',
+                      nullable: true,
+                      description: 'Expense description',
+                    },
+                    amount: { type: 'string', description: 'Expense amount (decimal as string)' },
+                    paidAt: {
+                      type: 'string',
+                      format: 'date-time',
+                      description: 'When the expense was paid',
+                    },
+                    userId: { type: 'integer', description: 'User who paid the expense' },
+                    groupId: {
+                      type: 'integer',
+                      nullable: true,
+                      description: 'Group ID (if group expense)',
+                    },
+                    user: {
+                      type: 'object',
+                      description: 'User who paid the expense',
+                      properties: {
+                        id: { type: 'integer' },
+                        name: { type: 'string' },
+                        username: { type: 'string', nullable: true },
+                      },
+                    },
+                  },
+                },
+              },
+              _count: {
+                type: 'object',
+                description: 'Count of related records',
+                properties: {
+                  members: { type: 'integer', description: 'Total number of group members' },
+                  expenses: { type: 'integer', description: 'Total number of group expenses' },
+                },
+              },
+            },
+          },
+          400: {
+            description: 'Invalid group ID',
+            type: 'object',
+            properties: {
+              message: { type: 'string' },
+              error: { type: 'string' },
+              statusCode: { type: 'integer' },
+            },
           },
           403: {
             description: 'Access denied',
@@ -151,6 +263,15 @@ const groupsRoute: FastifyPluginAsync = async fastify => {
           },
           404: {
             description: 'Group not found',
+            type: 'object',
+            properties: {
+              message: { type: 'string' },
+              error: { type: 'string' },
+              statusCode: { type: 'integer' },
+            },
+          },
+          500: {
+            description: 'Internal server error',
             type: 'object',
             properties: {
               message: { type: 'string' },

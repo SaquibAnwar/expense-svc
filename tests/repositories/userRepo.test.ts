@@ -250,11 +250,9 @@ describe('UserRepository', () => {
 
   describe('verifyPassword', () => {
     it('should return user when password is correct', async () => {
-      const userWithLastLogin = { ...mockUser, lastLoginAt: expect.any(Date) };
-      
       mockPrisma.user.findUnique.mockResolvedValue(mockUser);
       (mockedBcrypt.compare as jest.Mock).mockResolvedValue(true);
-      mockPrisma.user.update.mockResolvedValue(userWithLastLogin);
+      mockPrisma.user.update.mockResolvedValue(mockUser); // Return value doesn't matter since function doesn't use it
 
       const result = await verifyPassword('test@example.com', 'password123');
 
@@ -266,7 +264,7 @@ describe('UserRepository', () => {
         where: { id: 1 },
         data: { lastLoginAt: expect.any(Date) }
       });
-      expect(result).toEqual(userWithLastLogin);
+      expect(result).toEqual(mockUser); // Function returns the original user, not the updated one
     });
 
     it('should return null when user not found', async () => {

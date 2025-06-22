@@ -835,4 +835,4 @@ const groupsRoute: FastifyPluginAsync = async fastify => {
   );
 };
 
-export default groupsRoute; 
+export default groupsRoute;

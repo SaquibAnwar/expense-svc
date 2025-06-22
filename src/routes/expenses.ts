@@ -213,12 +213,14 @@ const expensesRoute: FastifyPluginAsync = async fastify => {
                 username: true,
               },
             },
-            group: groupId ? {
-              select: {
-                id: true,
-                name: true,
-              },
-            } : false,
+            group: groupId
+              ? {
+                  select: {
+                    id: true,
+                    name: true,
+                  },
+                }
+              : false,
           },
         });
 

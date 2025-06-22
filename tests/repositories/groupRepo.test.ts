@@ -142,7 +142,7 @@ describe('Group Repository', () => {
 
       expect(groups).toBeDefined();
       expect(groups.length).toBe(2);
-      
+
       const groupNames = groups.map(g => g.name).sort();
       expect(groupNames).toEqual(['User1 Group', 'User2 Group']);
     });
@@ -327,13 +327,13 @@ describe('Group Repository', () => {
         data: [
           {
             title: 'Test Expense 1',
-            amount: 50.00,
+            amount: 50.0,
             userId: testUser1.id,
             groupId: testGroup.id,
           },
           {
             title: 'Test Expense 2',
-            amount: 75.50,
+            amount: 75.5,
             userId: testUser2.id,
             groupId: testGroup.id,
           },
@@ -347,7 +347,7 @@ describe('Group Repository', () => {
       expect(stats).toBeDefined();
       expect(stats!.membersCount).toBe(2);
       expect(stats!.expensesCount).toBe(2);
-      expect(stats!.totalAmount).toBe(125.50);
+      expect(stats!.totalAmount).toBe(125.5);
     });
 
     it('should return null for non-existent group', async () => {
@@ -355,4 +355,4 @@ describe('Group Repository', () => {
       expect(stats).toBeNull();
     });
   });
-}); 
+});

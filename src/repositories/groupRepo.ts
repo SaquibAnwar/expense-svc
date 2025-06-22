@@ -31,7 +31,7 @@ export interface UpdateMemberRoleData {
 
 /** Create a new group */
 export async function createGroup(data: CreateGroupData): Promise<Group> {
-  return prisma.$transaction(async (tx) => {
+  return prisma.$transaction(async tx => {
     // Create the group
     const group = await tx.group.create({
       data: {
@@ -309,4 +309,4 @@ export async function getGroupStats(groupId: number) {
     expensesCount: stats._count.expenses,
     totalAmount,
   };
-} 
+}

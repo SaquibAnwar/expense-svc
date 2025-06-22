@@ -145,8 +145,16 @@ const groupsRoute: FastifyPluginAsync = async fastify => {
               description: { type: 'string', nullable: true, description: 'Group description' },
               avatar: { type: 'string', nullable: true, description: 'Group avatar URL' },
               isActive: { type: 'boolean', description: 'Whether the group is active' },
-              createdAt: { type: 'string', format: 'date-time', description: 'Group creation timestamp' },
-              updatedAt: { type: 'string', format: 'date-time', description: 'Group last update timestamp' },
+              createdAt: {
+                type: 'string',
+                format: 'date-time',
+                description: 'Group creation timestamp',
+              },
+              updatedAt: {
+                type: 'string',
+                format: 'date-time',
+                description: 'Group last update timestamp',
+              },
               createdBy: { type: 'integer', description: 'Creator user ID' },
               creator: {
                 type: 'object',
@@ -167,7 +175,11 @@ const groupsRoute: FastifyPluginAsync = async fastify => {
                   properties: {
                     id: { type: 'integer', description: 'Member relationship ID' },
                     role: { type: 'string', enum: ['ADMIN', 'MEMBER'], description: 'Member role' },
-                    joinedAt: { type: 'string', format: 'date-time', description: 'When the member joined' },
+                    joinedAt: {
+                      type: 'string',
+                      format: 'date-time',
+                      description: 'When the member joined',
+                    },
                     groupId: { type: 'integer', description: 'Group ID' },
                     userId: { type: 'integer', description: 'User ID' },
                     user: {
@@ -192,11 +204,23 @@ const groupsRoute: FastifyPluginAsync = async fastify => {
                   properties: {
                     id: { type: 'integer', description: 'Expense ID' },
                     title: { type: 'string', description: 'Expense title' },
-                    description: { type: 'string', nullable: true, description: 'Expense description' },
+                    description: {
+                      type: 'string',
+                      nullable: true,
+                      description: 'Expense description',
+                    },
                     amount: { type: 'string', description: 'Expense amount (decimal as string)' },
-                    paidAt: { type: 'string', format: 'date-time', description: 'When the expense was paid' },
+                    paidAt: {
+                      type: 'string',
+                      format: 'date-time',
+                      description: 'When the expense was paid',
+                    },
                     userId: { type: 'integer', description: 'User who paid the expense' },
-                    groupId: { type: 'integer', nullable: true, description: 'Group ID (if group expense)' },
+                    groupId: {
+                      type: 'integer',
+                      nullable: true,
+                      description: 'Group ID (if group expense)',
+                    },
                     user: {
                       type: 'object',
                       description: 'User who paid the expense',

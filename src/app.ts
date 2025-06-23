@@ -6,6 +6,7 @@ import fastifySensible from '@fastify/sensible';
 import healthRoute from './routes/health.js';
 import expensesRoute from './routes/expenses.js';
 import expenseSplitsRoute from './routes/expenseSplits.js';
+import settlementsRoute from './routes/settlements.js';
 import usersRoute from './routes/users.js';
 import groupsRoute from './routes/groups.js';
 
@@ -38,6 +39,7 @@ async function createApp() {
         { name: 'users', description: 'User management endpoints' },
         { name: 'expenses', description: 'Expense management endpoints' },
         { name: 'expense-splits', description: 'Expense splitting endpoints' },
+        { name: 'settlements', description: 'Settlement tracking endpoints' },
         { name: 'groups', description: 'Group management endpoints' },
       ],
     },
@@ -58,6 +60,7 @@ async function createApp() {
   await app.register(usersRoute, { prefix: '/api/v1' });
   await app.register(expensesRoute, { prefix: '/api/v1' });
   await app.register(expenseSplitsRoute, { prefix: '/api/v1' });
+  await app.register(settlementsRoute, { prefix: '/api/v1' });
   await app.register(groupsRoute, { prefix: '/api/v1' });
 
   // Graceful shutdown

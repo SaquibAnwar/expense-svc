@@ -47,7 +47,9 @@ export interface CreateSplitsRequest {
 /**
  * Create expense splits for an expense
  */
-export async function createExpenseSplits(data: CreateSplitsRequest): Promise<ExpenseSplitWithUser[]> {
+export async function createExpenseSplits(
+  data: CreateSplitsRequest
+): Promise<ExpenseSplitWithUser[]> {
   const { expenseId, splitType, participants } = data;
 
   // Get the expense to calculate splits
@@ -239,7 +241,10 @@ export async function getUserSplits(userId: number): Promise<ExpenseSplitWithExp
 /**
  * Mark a split as paid
  */
-export async function markSplitAsPaid(expenseId: number, userId: number): Promise<ExpenseSplitWithUser> {
+export async function markSplitAsPaid(
+  expenseId: number,
+  userId: number
+): Promise<ExpenseSplitWithUser> {
   return prisma.expenseSplit.update({
     where: {
       expenseId_userId: { expenseId, userId },

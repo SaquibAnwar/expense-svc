@@ -1,7 +1,11 @@
 import fastify from 'fastify';
 import { PrismaClient } from '@prisma/client';
+import fastifySwagger from '@fastify/swagger';
+import fastifySwaggerUI from '@fastify/swagger-ui';
+import fastifySensible from '@fastify/sensible';
 import healthRoute from './routes/health.js';
 import expensesRoute from './routes/expenses.js';
+import expenseSplitsRoute from './routes/expenseSplits.js';
 import usersRoute from './routes/users.js';
 import groupsRoute from './routes/groups.js';
 
@@ -20,7 +24,7 @@ async function createApp() {
   });
 
   // Register plugins
-  await app.register(import('@fastify/swagger'), {
+  await app.register(fastifySwagger, {
     openapi: {
       info: {
         title: 'Expense Service API',
@@ -33,12 +37,13 @@ async function createApp() {
         { name: 'auth', description: 'Authentication endpoints' },
         { name: 'users', description: 'User management endpoints' },
         { name: 'expenses', description: 'Expense management endpoints' },
+        { name: 'expense-splits', description: 'Expense splitting endpoints' },
         { name: 'groups', description: 'Group management endpoints' },
       ],
     },
   });
 
-  await app.register(import('@fastify/swagger-ui'), {
+  await app.register(fastifySwaggerUI, {
     routePrefix: '/docs',
     uiConfig: {
       docExpansion: 'list',
@@ -46,12 +51,13 @@ async function createApp() {
     },
   });
 
-  await app.register(import('@fastify/sensible'));
+  await app.register(fastifySensible);
 
   // Register routes
   await app.register(healthRoute);
   await app.register(usersRoute, { prefix: '/api/v1' });
   await app.register(expensesRoute, { prefix: '/api/v1' });
+  await app.register(expenseSplitsRoute, { prefix: '/api/v1' });
   await app.register(groupsRoute, { prefix: '/api/v1' });
 
   // Graceful shutdown

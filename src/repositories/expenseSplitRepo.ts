@@ -293,11 +293,14 @@ export async function getUserSettlements(userId: number): Promise<UserSettlement
   });
 
   // Group splits by the other user involved
-  const settlementMap = new Map<number, {
-    user: { id: number; name: string; email: string };
-    owedByUser: Decimal; // Amount user owes to this person
-    owedToUser: Decimal; // Amount this person owes to user
-  }>();
+  const settlementMap = new Map<
+    number,
+    {
+      user: { id: number; name: string; email: string };
+      owedByUser: Decimal; // Amount user owes to this person
+      owedToUser: Decimal; // Amount this person owes to user
+    }
+  >();
 
   for (const split of userSplits) {
     let otherUserId: number;
@@ -321,9 +324,10 @@ export async function getUserSettlements(userId: number): Promise<UserSettlement
     // Initialize settlement for this user if not exists
     if (!settlementMap.has(otherUserId)) {
       settlementMap.set(otherUserId, {
-        user: split.userId === userId ? 
-          { id: otherUserId, name: '', email: '' } : // We'll get this from another query
-          split.user,
+        user:
+          split.userId === userId
+            ? { id: otherUserId, name: '', email: '' } // We'll get this from another query
+            : split.user,
         owedByUser: new Decimal(0),
         owedToUser: new Decimal(0),
       });
@@ -339,10 +343,10 @@ export async function getUserSettlements(userId: number): Promise<UserSettlement
   }
 
   // Get user details for any missing user info
-  const userIds = Array.from(settlementMap.keys()).filter(id => 
-    settlementMap.get(id)!.user.name === ''
+  const userIds = Array.from(settlementMap.keys()).filter(
+    id => settlementMap.get(id)!.user.name === ''
   );
-  
+
   if (userIds.length > 0) {
     const users = await prisma.user.findMany({
       where: { id: { in: userIds } },
@@ -358,22 +362,24 @@ export async function getUserSettlements(userId: number): Promise<UserSettlement
   }
 
   // Convert to UserSettlement array with net calculations
-  const settlements: UserSettlement[] = Array.from(settlementMap.entries()).map(
-    ([otherUserId, settlement]) => ({
+  const settlements: UserSettlement[] = Array.from(settlementMap.entries())
+    .map(([otherUserId, settlement]) => ({
       userId: otherUserId,
       name: settlement.user.name,
       email: settlement.user.email,
       owedByYou: settlement.owedByUser,
       owedToYou: settlement.owedToUser,
       netAmount: settlement.owedToUser.minus(settlement.owedByUser),
-    })
-  ).filter(settlement => 
-    // Only include settlements where there's actually money involved
-    !settlement.owedByYou.equals(0) || !settlement.owedToYou.equals(0)
-  ).sort((a, b) => 
-    // Sort by net amount descending (people who owe you most first)
-    b.netAmount.minus(a.netAmount).toNumber()
-  );
+    }))
+    .filter(
+      settlement =>
+        // Only include settlements where there's actually money involved
+        !settlement.owedByYou.equals(0) || !settlement.owedToYou.equals(0)
+    )
+    .sort((a, b) =>
+      // Sort by net amount descending (people who owe you most first)
+      b.netAmount.minus(a.netAmount).toNumber()
+    );
 
   return settlements;
 }
@@ -382,7 +388,7 @@ export async function getUserSettlements(userId: number): Promise<UserSettlement
  * Get detailed settlement between two specific users
  */
 export async function getSettlementBetweenUsers(
-  user1Id: number, 
+  user1Id: number,
   user2Id: number
 ): Promise<{
   user1: { id: number; name: string; email: string };

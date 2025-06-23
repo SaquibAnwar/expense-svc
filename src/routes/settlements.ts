@@ -20,7 +20,8 @@ export default async function settlementsRoute(fastify: FastifyInstance) {
       schema: {
         tags: ['settlements'],
         summary: 'Get user settlements',
-        description: 'Get all settlements for the authenticated user (who they owe and who owes them)',
+        description:
+          'Get all settlements for the authenticated user (who they owe and who owes them)',
         headers: {
           type: 'object',
           required: ['authorization'],
@@ -40,7 +41,10 @@ export default async function settlementsRoute(fastify: FastifyInstance) {
                     userId: { type: 'integer', description: 'Other user ID' },
                     name: { type: 'string', description: 'Other user name' },
                     email: { type: 'string', description: 'Other user email' },
-                    netAmount: { type: 'string', description: 'Net amount (positive = they owe you, negative = you owe them)' },
+                    netAmount: {
+                      type: 'string',
+                      description: 'Net amount (positive = they owe you, negative = you owe them)',
+                    },
                     owedByYou: { type: 'string', description: 'Total amount you owe them' },
                     owedToYou: { type: 'string', description: 'Total amount they owe you' },
                   },
@@ -83,7 +87,8 @@ export default async function settlementsRoute(fastify: FastifyInstance) {
       schema: {
         tags: ['settlements'],
         summary: 'Get settlement with specific user',
-        description: 'Get detailed settlement information between authenticated user and another user',
+        description:
+          'Get detailed settlement information between authenticated user and another user',
         headers: {
           type: 'object',
           required: ['authorization'],
@@ -120,7 +125,10 @@ export default async function settlementsRoute(fastify: FastifyInstance) {
               },
               user1OwesUser2: { type: 'string', description: 'Amount user1 owes user2' },
               user2OwesUser1: { type: 'string', description: 'Amount user2 owes user1' },
-              netAmount: { type: 'string', description: 'Net amount (positive = user2 owes user1)' },
+              netAmount: {
+                type: 'string',
+                description: 'Net amount (positive = user2 owes user1)',
+              },
               splits: {
                 type: 'array',
                 items: {
@@ -209,7 +217,7 @@ export default async function settlementsRoute(fastify: FastifyInstance) {
         body: {
           type: 'object',
           properties: {
-            amount: { 
+            amount: {
               type: 'number',
               description: 'Amount to settle (if not provided, settles all debts)',
               minimum: 0.01,
@@ -273,4 +281,4 @@ export default async function settlementsRoute(fastify: FastifyInstance) {
       }
     }
   );
-} 
+}

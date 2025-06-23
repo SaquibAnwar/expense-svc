@@ -302,9 +302,9 @@ describe('Settlement Tracking', () => {
     });
 
     it('should throw error for non-existent user', async () => {
-      await expect(
-        getSettlementBetweenUsers(testUser1.id, 99999)
-      ).rejects.toThrow('One or both users not found');
+      await expect(getSettlementBetweenUsers(testUser1.id, 99999)).rejects.toThrow(
+        'One or both users not found'
+      );
     });
   });
 
@@ -357,11 +357,7 @@ describe('Settlement Tracking', () => {
       });
 
       // User2 settles only $50 of the $75 owed
-      const result = await settleDebtBetweenUsers(
-        testUser2.id,
-        testUser1.id,
-        new Decimal('50')
-      );
+      const result = await settleDebtBetweenUsers(testUser2.id, testUser1.id, new Decimal('50'));
 
       expect(result.settledAmount.toString()).toBe('0'); // Can't partially settle a single split
       expect(result.settledSplits).toBe(0);
@@ -410,11 +406,7 @@ describe('Settlement Tracking', () => {
       });
 
       // Settle $30 (should pay off first expense completely)
-      const result = await settleDebtBetweenUsers(
-        testUser2.id,
-        testUser1.id,
-        new Decimal('30')
-      );
+      const result = await settleDebtBetweenUsers(testUser2.id, testUser1.id, new Decimal('30'));
 
       expect(result.settledAmount.toString()).toBe('15'); // Only first split ($15)
       expect(result.settledSplits).toBe(1);
@@ -428,4 +420,4 @@ describe('Settlement Tracking', () => {
       expect(paidSplits[0].expense.title).toBe('Coffee 1');
     });
   });
-}); 
+});

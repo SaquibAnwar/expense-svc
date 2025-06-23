@@ -39,6 +39,7 @@ model User {
   expenses       Expense[]
   createdGroups  Group[]       @relation("GroupCreator")
   groupMembers   GroupMember[]
+  expenseSplits  ExpenseSplit[]
   
   @@map("users")
 }
@@ -92,10 +93,41 @@ model Expense {
   groupId     Int?     // Optional - expense can be personal or group
   group       Group?   @relation(fields: [groupId], references: [id])
   
+  // New relation for expense splits
+  splits      ExpenseSplit[]
+  
   @@map("expenses")
+}
+
+model ExpenseSplit {
+  id          Int         @id @default(autoincrement())
+  amount      Decimal     // The amount this user owes for this expense
+  splitType   SplitType   @default(EQUAL)
+  percentage  Float?      // Only used for PERCENTAGE splits (0-100)
+  isPaid      Boolean     @default(false) // Track if this split has been settled
+  
+  // Timestamps
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  
+  // Relations
+  expenseId   Int
+  expense     Expense     @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  userId      Int
+  user        User        @relation(fields: [userId], references: [id])
+  
+  // Ensure unique split per user per expense
+  @@unique([expenseId, userId])
+  @@map("expense_splits")
 }
 
 enum GroupMemberRole {
   ADMIN
   MEMBER
+}
+
+enum SplitType {
+  EQUAL       // Split equally among participants
+  AMOUNT      // Split by specific amounts
+  PERCENTAGE  // Split by percentages
 }

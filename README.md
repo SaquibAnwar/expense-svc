@@ -28,15 +28,51 @@ A comprehensive RESTful API service for managing shared expenses and splitting c
 - Expense descriptions and categorization
 - Decimal precision for accurate financial calculations
 
+### ✅ **Expense Splitting & Settlement**
+- **Multi-type expense splitting**: Equal, amount-based, and percentage-based splits
+- **Individual settlement tracking**: Calculate who owes whom between users
+- **Group settlement optimization**: Minimize transactions using smart algorithms
+- **Balance summaries**: Real-time debt calculations and payment tracking
+- **Settlement execution**: Mark debts as paid with chronological processing
+- **Comprehensive validation**: Ensure splits total correctly (100% for percentage, exact amounts)
+
 ### ✅ **Technical Excellence**
 - **TypeScript** for complete type safety
 - **Prisma ORM** with PostgreSQL for robust data management
 - **Fastify** web framework for high performance
 - **Comprehensive Swagger/OpenAPI** documentation with detailed schemas
-- **98.61% test coverage** with Jest and 112+ test cases
+- **98.61% test coverage** with Jest and 196+ test cases
 - **CI/CD pipeline** with GitHub Actions
 - **Docker support** for development and deployment
 - **Database migrations** and seeding capabilities
+
+## 🗺️ Future Roadmap
+
+### ✅ **Completed Features**
+- ✅ **Groups/Parties** - Create and manage groups for shared expenses
+- ✅ **Expense Splitting** - Split expenses equally, by amount, or percentage
+- ✅ **Settlement Tracking** - Calculate who owes whom with optimization algorithms
+- ✅ **User Authentication** - JWT-based authentication with secure password hashing
+- ✅ **Group Management** - Role-based access control with admin/member roles
+- ✅ **Comprehensive Testing** - 98%+ test coverage with integration tests
+
+### 🔄 **Planned Features**
+- 🔄 **Friend System** - Add friends for easier group creation and management
+- 🔄 **Expense Categories** - Categorize expenses (food, travel, utilities, entertainment)
+- 🔄 **OAuth Integration** - Google, Facebook, and other social media sign-in options
+- 🔄 **Notifications** - Email and push notifications for expenses and settlements
+- 🔄 **Receipt Upload** - Photo upload and OCR for automatic expense entry
+- 🔄 **Recurring Expenses** - Set up and manage recurring bills and payments
+- 🔄 **Expense Analytics** - Detailed spending reports and insights
+- 🔄 **Multi-currency Support** - Handle expenses in different currencies
+- 🔄 **Mobile App** - React Native companion app for iOS and Android
+- 🔄 **Export Features** - PDF reports and CSV export for accounting
+
+### 🎯 **Next Priority Items**
+1. **Friend System** - Core social features for easier group management
+2. **Expense Categories** - Better organization and tracking capabilities  
+3. **OAuth Integration** - Streamlined authentication experience
+4. **Push Notifications** - Real-time updates for group activities
 
 ## 🏗️ Architecture & Database Schema
 
@@ -169,33 +205,27 @@ docker-compose down
 - **Rate limiting ready** architecture
 - **CORS configuration** for cross-origin requests
 
-## 📚 API Endpoints
+## 📚 API Documentation
 
-### Authentication & Users
-- `POST /api/v1/users/register` - User registration
-- `POST /api/v1/users/login` - User authentication
-- `GET /api/v1/users/profile` - Get user profile
-- `PUT /api/v1/users/profile` - Update user profile
+Complete interactive API documentation is available through Swagger UI:
 
-### Group Management
-- `GET /api/v1/groups` - List user's groups
-- `POST /api/v1/groups` - Create new group
-- `GET /api/v1/groups/{id}` - Get group details (members only)
-- `PUT /api/v1/groups/{id}` - Update group (admins only)
-- `POST /api/v1/groups/{id}/members` - Add group member (admins only)
-- `DELETE /api/v1/groups/{id}/members/{userId}` - Remove member
-- `PUT /api/v1/groups/{id}/members/{userId}/role` - Update member role
+- **🌐 Interactive API Explorer**: http://localhost:3000/docs
+- **📋 OpenAPI Schema**: http://localhost:3000/docs/json
 
-### Expense Management
-- `GET /api/v1/expenses` - List user expenses
-- `POST /api/v1/expenses` - Create expense (personal or group)
-- `GET /api/v1/expenses/{id}` - Get expense details
-- `PUT /api/v1/expenses/{id}` - Update expense
-- `DELETE /api/v1/expenses/{id}` - Delete expense
+### Key API Features
+- **Authentication & User Management** - Registration, login, profile management
+- **Group Management** - Create groups, manage members with role-based access
+- **Expense Management** - CRUD operations for personal and group expenses
+- **Expense Splitting** - Equal, amount-based, and percentage splits with validation
+- **Settlement Tracking** - Individual and optimized group settlement calculations
+- **System Health** - Health checks and readiness probes
 
-### System Health
-- `GET /health` - Basic health check
-- `GET /health/ready` - Readiness probe
+The Swagger documentation includes:
+- Complete request/response schemas with examples
+- Authentication requirements for each endpoint
+- Interactive testing interface
+- Detailed error response documentation
+- Model definitions and validation rules
 
 ## 🧪 Testing
 

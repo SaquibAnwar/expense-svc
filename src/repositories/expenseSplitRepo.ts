@@ -538,6 +538,349 @@ export async function settleDebtBetweenUsers(
 }
 
 /**
+ * Group settlement summary for a group
+ */
+export interface GroupSettlement {
+  groupId: number;
+  groupName: string;
+  members: Array<{
+    userId: number;
+    name: string;
+    email: string;
+    netBalance: Decimal; // Positive = should receive, negative = should pay
+  }>;
+  optimizedTransactions: Array<{
+    fromUserId: number;
+    fromUserName: string;
+    toUserId: number;
+    toUserName: string;
+    amount: Decimal;
+  }>;
+  totalDebt: Decimal; // Total amount of debt in the group
+}
+
+/**
+ * Calculate optimized group settlements
+ */
+export async function getGroupSettlements(groupId: number): Promise<GroupSettlement> {
+  // Get group details
+  const group = await prisma.group.findUnique({
+    where: { id: groupId },
+    select: { id: true, name: true },
+  });
+
+  if (!group) {
+    throw new Error('Group not found');
+  }
+
+  // Get all group members
+  const members = await prisma.groupMember.findMany({
+    where: { groupId },
+    include: {
+      user: { select: { id: true, name: true, email: true } },
+    },
+  });
+
+  if (members.length === 0) {
+    throw new Error('No members found in group');
+  }
+
+  // Get all unpaid splits for group expenses
+  const groupSplits = await prisma.expenseSplit.findMany({
+    where: {
+      isPaid: false,
+      expense: { groupId },
+    },
+    include: {
+      user: { select: { id: true, name: true, email: true } },
+      expense: {
+        select: { userId: true, user: { select: { name: true } } },
+      },
+    },
+  });
+
+  // Calculate net balance for each member
+  const memberBalances = new Map<number, { user: any; netBalance: Decimal }>();
+
+  // Initialize all members with zero balance
+  for (const member of members) {
+    memberBalances.set(member.userId, {
+      user: member.user,
+      netBalance: new Decimal(0),
+    });
+  }
+
+  // Process splits to calculate net balances
+  for (const split of groupSplits) {
+    const payerId = split.expense.userId; // Who paid the expense
+    const owerId = split.userId; // Who owes the money
+
+    // Skip if payer is not in the group (shouldn't happen)
+    if (!memberBalances.has(payerId)) {
+      continue;
+    }
+
+    // Add to payer's balance (they should receive this)
+    const payerBalance = memberBalances.get(payerId)!;
+    payerBalance.netBalance = payerBalance.netBalance.plus(split.amount);
+
+    // Subtract from ower's balance (they should pay this)
+    if (memberBalances.has(owerId)) {
+      const owerBalance = memberBalances.get(owerId)!;
+      owerBalance.netBalance = owerBalance.netBalance.minus(split.amount);
+    }
+  }
+
+  // Calculate optimized transactions using debt simplification algorithm
+  const optimizedTransactions = calculateOptimalTransactions(memberBalances);
+
+  // Calculate total debt in the group
+  const totalDebt = Array.from(memberBalances.values())
+    .filter(member => member.netBalance.lessThan(0))
+    .reduce((sum, member) => sum.plus(member.netBalance.abs()), new Decimal(0));
+
+  return {
+    groupId,
+    groupName: group.name,
+    members: Array.from(memberBalances.entries()).map(([userId, { user, netBalance }]) => ({
+      userId,
+      name: user.name,
+      email: user.email,
+      netBalance,
+    })),
+    optimizedTransactions,
+    totalDebt,
+  };
+}
+
+/**
+ * Calculate optimal transactions to settle all debts with minimum transactions
+ * Uses a greedy algorithm to minimize the number of payments
+ */
+function calculateOptimalTransactions(
+  memberBalances: Map<number, { user: any; netBalance: Decimal }>
+): Array<{
+  fromUserId: number;
+  fromUserName: string;
+  toUserId: number;
+  toUserName: string;
+  amount: Decimal;
+}> {
+  const transactions: Array<{
+    fromUserId: number;
+    fromUserName: string;
+    toUserId: number;
+    toUserName: string;
+    amount: Decimal;
+  }> = [];
+
+  // Create lists of creditors (should receive money) and debtors (should pay money)
+  const creditors: Array<{ userId: number; user: any; amount: Decimal }> = [];
+  const debtors: Array<{ userId: number; user: any; amount: Decimal }> = [];
+
+  for (const [userId, { user, netBalance }] of memberBalances.entries()) {
+    if (netBalance.greaterThan(0)) {
+      creditors.push({ userId, user, amount: netBalance });
+    } else if (netBalance.lessThan(0)) {
+      debtors.push({ userId, user, amount: netBalance.abs() });
+    }
+    // Skip users with zero balance
+  }
+
+  // Sort creditors by amount descending (largest creditors first)
+  creditors.sort((a, b) => b.amount.minus(a.amount).toNumber());
+
+  // Sort debtors by amount descending (largest debtors first)
+  debtors.sort((a, b) => b.amount.minus(a.amount).toNumber());
+
+  // Greedy algorithm: match largest debtor with largest creditor
+  while (creditors.length > 0 && debtors.length > 0) {
+    const creditor = creditors[0];
+    const debtor = debtors[0];
+
+    // Calculate the settlement amount (minimum of what creditor is owed and debtor owes)
+    const settlementAmount = Decimal.min(creditor.amount, debtor.amount);
+
+    // Create transaction
+    transactions.push({
+      fromUserId: debtor.userId,
+      fromUserName: debtor.user.name,
+      toUserId: creditor.userId,
+      toUserName: creditor.user.name,
+      amount: settlementAmount,
+    });
+
+    // Update amounts
+    creditor.amount = creditor.amount.minus(settlementAmount);
+    debtor.amount = debtor.amount.minus(settlementAmount);
+
+    // Remove settled parties
+    if (creditor.amount.equals(0)) {
+      creditors.shift();
+    }
+    if (debtor.amount.equals(0)) {
+      debtors.shift();
+    }
+  }
+
+  return transactions;
+}
+
+/**
+ * Execute optimized group settlement (mark specific splits as paid)
+ */
+export async function executeGroupSettlement(
+  groupId: number,
+  settlements: Array<{
+    fromUserId: number;
+    toUserId: number;
+    amount: Decimal;
+  }>
+): Promise<{
+  settledAmount: Decimal;
+  settledSplits: number;
+  transactions: number;
+}> {
+  let totalSettledAmount = new Decimal(0);
+  let totalSettledSplits = 0;
+
+  // For each settlement transaction
+  for (const settlement of settlements) {
+    // Find unpaid splits where fromUser owes money to expenses paid by toUser
+    const splitsToSettle = await prisma.expenseSplit.findMany({
+      where: {
+        userId: settlement.fromUserId,
+        expense: {
+          userId: settlement.toUserId,
+          groupId,
+        },
+        isPaid: false,
+      },
+      orderBy: { createdAt: 'asc' }, // Settle oldest first
+    });
+
+    let remainingAmount = settlement.amount;
+
+    // Mark splits as paid until we reach the settlement amount
+    for (const split of splitsToSettle) {
+      if (remainingAmount.lessThanOrEqualTo(0)) {
+        break;
+      }
+
+      if (split.amount.lessThanOrEqualTo(remainingAmount)) {
+        // Settle this split completely
+        await prisma.expenseSplit.update({
+          where: { id: split.id },
+          data: { isPaid: true },
+        });
+
+        totalSettledAmount = totalSettledAmount.plus(split.amount);
+        remainingAmount = remainingAmount.minus(split.amount);
+        totalSettledSplits++;
+      }
+      // Note: We don't handle partial settlements here for simplicity
+      // In a real app, you might want to track partial payments
+    }
+  }
+
+  return {
+    settledAmount: totalSettledAmount,
+    settledSplits: totalSettledSplits,
+    transactions: settlements.length,
+  };
+}
+
+/**
+ * Get simplified group member debt summary using individual settlement logic
+ */
+export async function getGroupMemberDebts(groupId: number): Promise<{
+  groupId: number;
+  groupName: string;
+  memberDebts: Array<{
+    member: { id: number; name: string; email: string };
+    totalOwes: Decimal;
+    totalOwed: Decimal;
+    netBalance: Decimal;
+  }>;
+}> {
+  // Get group details
+  const group = await prisma.group.findUnique({
+    where: { id: groupId },
+    include: {
+      members: {
+        include: { user: { select: { id: true, name: true, email: true } } },
+      },
+    },
+  });
+
+  if (!group) {
+    throw new Error('Group not found');
+  }
+
+  const memberDebts: Array<{
+    member: { id: number; name: string; email: string };
+    totalOwes: Decimal;
+    totalOwed: Decimal;
+    netBalance: Decimal;
+  }> = [];
+
+  // For each member, calculate their group-specific balances
+  for (const member of group.members) {
+    const userId = member.userId;
+
+    // Get splits where this user owes money (on expenses they didn't pay)
+    const owedSplits = await prisma.expenseSplit.findMany({
+      where: {
+        userId,
+        isPaid: false,
+        expense: {
+          groupId,
+          userId: { not: userId }, // Only expenses NOT paid by this user
+        },
+      },
+    });
+
+    // Get splits where others owe this user money (on expenses this user paid)
+    const owingSplits = await prisma.expenseSplit.findMany({
+      where: {
+        isPaid: false,
+        expense: {
+          userId, // Expenses paid by this user
+          groupId,
+        },
+        userId: { not: userId }, // But split with others (not their own split)
+      },
+    });
+
+    let totalOwes = new Decimal(0);
+    let totalOwed = new Decimal(0);
+
+    // Calculate what this user owes
+    for (const split of owedSplits) {
+      totalOwes = totalOwes.plus(split.amount);
+    }
+
+    // Calculate what others owe this user
+    for (const split of owingSplits) {
+      totalOwed = totalOwed.plus(split.amount);
+    }
+
+    memberDebts.push({
+      member: member.user,
+      totalOwes,
+      totalOwed,
+      netBalance: totalOwed.minus(totalOwes),
+    });
+  }
+
+  return {
+    groupId,
+    groupName: group.name,
+    memberDebts: memberDebts.sort((a, b) => b.netBalance.minus(a.netBalance).toNumber()),
+  };
+}
+
+/**
  * Get balance summary for a user (what they owe and are owed)
  */
 export async function getUserBalanceSummary(userId: number) {

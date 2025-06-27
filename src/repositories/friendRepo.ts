@@ -9,7 +9,7 @@ const FriendRequestStatus = {
   DECLINED: 'DECLINED',
 } as const;
 
-type FriendRequestStatusType = typeof FriendRequestStatus[keyof typeof FriendRequestStatus];
+type FriendRequestStatusType = (typeof FriendRequestStatus)[keyof typeof FriendRequestStatus];
 
 interface FriendRequest {
   id: number;

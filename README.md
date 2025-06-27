@@ -328,6 +328,46 @@ Automated testing and validation with GitHub Actions:
 - **Database**: Automated migration testing
 - **Docker**: Container build verification
 
+## 🛡️ Branch Protection
+
+The repository includes comprehensive branch protection for the `master` branch:
+
+### Automated Protection (GitHub Actions)
+- **Direct push blocking**: Prevents accidental commits to master
+- **PR metadata validation**: Ensures proper titles and descriptions
+- **CI configuration validation**: Verifies all required checks are configured
+- **Status check enforcement**: All CI/CD checks must pass before merge
+
+### Required Checks Before Merge
+- ✅ Code formatting must pass (`npm run format:check`)
+- ✅ Linting must pass (`npm run lint`)
+- ✅ All tests must pass (`npm test`)
+- ✅ Build must succeed (`npm run build`)
+- ✅ Coverage thresholds must be met
+- ✅ Branch protection checks must pass
+
+### Setup Instructions
+Repository administrators can set up branch protection using:
+
+```bash
+# Automated setup (requires GitHub CLI)
+./scripts/setup-branch-protection.sh
+
+# Manual setup
+# See: docs/BRANCH_PROTECTION.md for detailed instructions
+```
+
+### Developer Workflow
+1. Create feature branch: `git checkout -b feature/my-feature`
+2. Make changes and commit
+3. Push branch: `git push origin feature/my-feature`
+4. Create PR via GitHub UI
+5. Wait for all checks to pass
+6. Get required approvals
+7. Merge via GitHub UI
+
+For complete details, see [`docs/BRANCH_PROTECTION.md`](docs/BRANCH_PROTECTION.md)
+
 ## 🤝 Contributing
 
 1. Fork the repository

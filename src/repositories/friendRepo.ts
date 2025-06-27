@@ -201,10 +201,7 @@ export async function getReceivedFriendRequests(userId: number): Promise<FriendR
 }
 
 /** Accept a friend request and create friendship */
-export async function acceptFriendRequest(
-  requestId: number,
-  userId: number
-): Promise<Friendship> {
+export async function acceptFriendRequest(requestId: number, userId: number): Promise<Friendship> {
   return prisma.$transaction(async tx => {
     // Get the friend request
     const request = await tx.friendRequest.findUnique({
@@ -522,7 +519,7 @@ export async function getMutualFriends(
     avatar: string | null;
   }>
 > {
-  // Use parameterized query to prevent SQL injection  
+  // Use parameterized query to prevent SQL injection
   const mutualFriends = await prisma.$queryRaw<
     Array<{
       id: number;

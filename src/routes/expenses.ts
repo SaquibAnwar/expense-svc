@@ -12,11 +12,13 @@ interface CreateExpenseBody {
   description?: string;
   amount: number;
   groupId?: number;
+  categoryId?: number;
 }
 
 interface UpdateExpenseBody {
   title?: string;
   amount?: number;
+  categoryId?: number;
 }
 
 const expensesRoute: FastifyPluginAsync = async fastify => {
@@ -163,6 +165,10 @@ const expensesRoute: FastifyPluginAsync = async fastify => {
             description: { type: 'string', description: 'Expense description' },
             amount: { type: 'number', description: 'Expense amount' },
             groupId: { type: 'integer', description: 'Group ID (optional, for group expenses)' },
+            categoryId: {
+              type: 'integer',
+              description: 'Category ID (optional, for categorized expenses)',
+            },
           },
           required: ['title', 'amount'],
         },

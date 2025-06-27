@@ -40,6 +40,7 @@ model User {
   createdGroups  Group[]       @relation("GroupCreator")
   groupMembers   GroupMember[]
   expenseSplits  ExpenseSplit[]
+  categories     Category[]    // User can create custom categories
   
   // Friend system relations
   sentFriendRequests     FriendRequest[] @relation("FriendRequestSender")
@@ -48,6 +49,29 @@ model User {
   friendships2           Friendship[]    @relation("FriendshipUser2")
   
   @@map("users")
+}
+
+model Category {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String?
+  icon        String   // Icon name/identifier (e.g., "food", "car", "home")
+  color       String   // Hex color code (e.g., "#FF5733")
+  isDefault   Boolean  @default(false) // True for system default categories
+  isActive    Boolean  @default(true)
+  
+  // Timestamps
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  userId      Int?     // Null for default categories, set for custom user categories
+  user        User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expenses    Expense[]
+  
+  // Ensure unique category names per user (including default categories)
+  @@unique([name, userId])
+  @@map("categories")
 }
 
 model Group {
@@ -98,6 +122,8 @@ model Expense {
   user        User     @relation(fields: [userId], references: [id])
   groupId     Int?     // Optional - expense can be personal or group
   group       Group?   @relation(fields: [groupId], references: [id])
+  categoryId  Int?     // Optional - expense can have a category
+  category    Category? @relation(fields: [categoryId], references: [id])
   
   // New relation for expense splits
   splits      ExpenseSplit[]

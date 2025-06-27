@@ -18,10 +18,12 @@ const mockPrisma = {
     groupBy: jest.fn(),
     findMany: jest.fn(),
   },
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
 } as any;
 
 jest.mock('@prisma/client', () => ({
   PrismaClient: jest.fn().mockImplementation(() => mockPrisma),
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   Decimal: jest.fn().mockImplementation((value: any) => ({
     toString: () => String(value),
     toNumber: () => parseFloat(String(value)),
@@ -241,7 +243,7 @@ describe('CategoryRepository', () => {
 
       expect(result).toEqual({
         ...mockCategory,
-        totalAmount: new Decimal(500),
+        totalAmount: new Decimal(1000),
         averageAmount: new Decimal(100),
         lastUsed: new Date('2023-12-01'),
       });

@@ -25,9 +25,12 @@ beforeAll(async () => {
   try {
     // Try to connect to the database
     await prisma.$connect();
+    // eslint-disable-next-line no-console
     console.log('✅ Database connection established for tests');
   } catch (error) {
+    // eslint-disable-next-line no-console
     console.error('❌ Failed to connect to test database:', error);
+    // eslint-disable-next-line no-console
     console.error('💡 Make sure your test database is running and DATABASE_URL is correct');
     process.exit(1);
   }
@@ -42,6 +45,7 @@ export { prisma as testPrisma };
 
 // Simple helper functions for test utilities
 export const createMockApp = (): FastifyInstance => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const mockInject = jest.fn().mockImplementation((options: any) => {
     // Mock different responses based on method and URL
     if (options.method === 'POST' && options.url === '/v1/expenses') {
@@ -86,5 +90,6 @@ export const createMockApp = (): FastifyInstance => {
   return {
     inject: mockInject,
     close: jest.fn().mockResolvedValue(undefined),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } as any;
 };

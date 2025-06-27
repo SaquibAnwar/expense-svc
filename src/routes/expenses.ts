@@ -201,19 +201,38 @@ const expensesRoute: FastifyPluginAsync = async fastify => {
               userId: { type: 'integer' },
             },
           },
+          400: {
+            description: 'Validation error',
+            type: 'object',
+            properties: {
+              message: { type: 'string' },
+              error: { type: 'string' },
+              statusCode: { type: 'integer' },
+            },
+          },
+          403: {
+            description: 'Not authorized to add expense to group',
+            type: 'object',
+            properties: {
+              message: { type: 'string' },
+              error: { type: 'string' },
+              statusCode: { type: 'integer' },
+            },
+          },
         },
       },
     },
     async (request, reply) => {
       try {
-        const { title, description, amount, groupId } = request.body as CreateExpenseBody;
+        const { title, description, amount, groupId, categoryId } =
+          request.body as CreateExpenseBody;
 
-        // If groupId is provided, validate user is a member
+        // Validate that user can add expense to group (if groupId provided)
         if (groupId) {
           const isMember = await isGroupMember(groupId, request.user!.id);
           if (!isMember) {
             return reply.code(403).send({
-              message: 'Access denied. You are not a member of this group.',
+              message: 'You are not a member of this group',
               error: 'Forbidden',
               statusCode: 403,
             });
@@ -225,20 +244,19 @@ const expensesRoute: FastifyPluginAsync = async fastify => {
           description,
           amount,
           userId: request.user!.id,
-          groupId: groupId || undefined,
+          groupId,
+          categoryId,
         });
 
         // Convert Decimal amounts to numbers for JSON response
-        const formattedExpense = {
+        return reply.code(201).send({
           ...expense,
           amount: expense.amount.toNumber(),
           splits: expense.splits.map(split => ({
             ...split,
             amount: split.amount.toNumber(),
           })),
-        };
-
-        return reply.code(201).send(formattedExpense);
+        });
       } catch (error) {
         fastify.log.error('Error creating expense:', error);
         return reply.code(500).send({
@@ -250,15 +268,15 @@ const expensesRoute: FastifyPluginAsync = async fastify => {
     }
   );
 
-  // PATCH /expenses/:id - Update expense
-  fastify.patch<{ Params: ExpenseParams; Body: UpdateExpenseBody }>(
+  // PUT /expenses/:id - Update user's expense
+  fastify.put<{ Params: ExpenseParams; Body: UpdateExpenseBody }>(
     '/expenses/:id',
     {
       preHandler: [authenticate],
       schema: {
         tags: ['expenses'],
-        summary: 'Update an expense',
-        description: 'Update an existing expense by ID (only accessible by the owner)',
+        summary: "Update user's expense",
+        description: 'Update a specific expense (only accessible by the owner)',
         headers: authHeaderSchema,
         params: {
           type: 'object',
@@ -272,6 +290,10 @@ const expensesRoute: FastifyPluginAsync = async fastify => {
           properties: {
             title: { type: 'string', description: 'Expense title' },
             amount: { type: 'number', description: 'Expense amount' },
+            categoryId: {
+              type: 'integer',
+              description: 'Category ID (optional, for categorized expenses)',
+            },
           },
         },
         response: {
@@ -310,7 +332,7 @@ const expensesRoute: FastifyPluginAsync = async fastify => {
           });
         }
 
-        // Check if expense exists and belongs to user first
+        // First check if expense exists and belongs to user
         const existingExpense = await getExpenseById(id);
         if (!existingExpense || existingExpense.userId !== request.user!.id) {
           return reply.code(404).send({
@@ -320,8 +342,7 @@ const expensesRoute: FastifyPluginAsync = async fastify => {
           });
         }
 
-        const updateData = request.body as UpdateExpenseBody;
-        const updatedExpense = await updateExpense(id, updateData);
+        const updatedExpense = await updateExpense(id, request.body as UpdateExpenseBody);
 
         // Convert Decimal amounts to numbers for JSON response
         return {
@@ -343,15 +364,15 @@ const expensesRoute: FastifyPluginAsync = async fastify => {
     }
   );
 
-  // DELETE /expenses/:id - Delete expense
+  // DELETE /expenses/:id - Delete user's expense
   fastify.delete<{ Params: ExpenseParams }>(
     '/expenses/:id',
     {
       preHandler: [authenticate],
       schema: {
         tags: ['expenses'],
-        summary: 'Delete an expense',
-        description: 'Delete an existing expense by ID (only accessible by the owner)',
+        summary: "Delete user's expense",
+        description: 'Delete a specific expense (only accessible by the owner)',
         headers: authHeaderSchema,
         params: {
           type: 'object',
@@ -392,7 +413,7 @@ const expensesRoute: FastifyPluginAsync = async fastify => {
           });
         }
 
-        // Check if expense exists and belongs to user first
+        // First check if expense exists and belongs to user
         const existingExpense = await getExpenseById(id);
         if (!existingExpense || existingExpense.userId !== request.user!.id) {
           return reply.code(404).send({
@@ -403,6 +424,7 @@ const expensesRoute: FastifyPluginAsync = async fastify => {
         }
 
         await deleteExpense(id);
+
         return { message: 'Expense deleted successfully' };
       } catch (error) {
         fastify.log.error('Error deleting expense:', error);

@@ -84,6 +84,33 @@ export interface ExpenseListOptions {
   includeDetails?: boolean;
 }
 
+// Type for dynamic where clause in search
+interface ExpenseWhereClause {
+  userId?: number;
+  groupId?: number | null;
+  title?: {
+    contains: string;
+    mode: 'insensitive';
+  };
+  description?: {
+    contains: string;
+    mode: 'insensitive';
+  };
+  amount?: {
+    gte?: Decimal;
+    lte?: Decimal;
+  };
+  paidAt?: {
+    gte?: Date;
+    lte?: Date;
+  };
+  splits?: {
+    some: {
+      isPaid: boolean;
+    };
+  };
+}
+
 // ===== Core CRUD Operations =====
 
 /** Create a new expense */
@@ -264,6 +291,30 @@ export async function updateExpense(
         },
       },
     },
+  });
+}
+
+/** Update user's expense (ensures user ownership) */
+export async function updateUserExpense(
+  expenseId: number,
+  userId: number,
+  data: UpdateExpenseData
+) {
+  const updateResult = await prisma.expense.updateMany({
+    where: {
+      id: expenseId,
+      userId: userId,
+    },
+    data,
+  });
+
+  if (updateResult.count === 0) {
+    return null; // Expense not found or doesn't belong to user
+  }
+
+  // Fetch and return the updated expense
+  return prisma.expense.findFirst({
+    where: { id: expenseId, userId },
   });
 }
 
@@ -595,7 +646,7 @@ export async function searchExpenses(
   const { limit = 50, offset = 0, orderBy = 'paidAt', orderDirection = 'desc' } = options;
 
   // Build where clause dynamically
-  const whereClause: Record<string, any> = {};
+  const whereClause: ExpenseWhereClause = {};
 
   if (filters.userId) {
     whereClause.userId = filters.userId;

@@ -37,7 +37,7 @@ export function generateToken(user: User): string {
   };
 
   const options: SignOptions = { expiresIn: JWT_EXPIRES_IN };
-  return jwt.sign(payload as any, JWT_SECRET, options);
+  return jwt.sign(payload, JWT_SECRET, options);
 }
 
 /** Verify JWT token */

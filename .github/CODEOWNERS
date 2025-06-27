@@ -1,0 +1,50 @@
+# Code Owners for expense-svc
+# This file defines who should review changes to specific parts of the codebase
+# See: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Global default owners for all files
+* @SaquibAnwar
+
+# Database and schema changes require careful review
+/prisma/                    @SaquibAnwar
+/prisma/migrations/         @SaquibAnwar
+/prisma/schema.prisma       @SaquibAnwar
+
+# Core application logic
+/src/                       @SaquibAnwar
+/src/repositories/          @SaquibAnwar
+/src/routes/                @SaquibAnwar
+/src/utils/                 @SaquibAnwar
+
+# Configuration files that affect the entire project
+/package.json               @SaquibAnwar
+/package-lock.json          @SaquibAnwar
+/tsconfig.json              @SaquibAnwar
+/jest.config.js             @SaquibAnwar
+/eslint.config.js           @SaquibAnwar
+
+# CI/CD and DevOps configurations
+/.github/                   @SaquibAnwar
+/.github/workflows/         @SaquibAnwar
+/docker-compose.yml         @SaquibAnwar
+/Dockerfile                 @SaquibAnwar
+
+# Documentation requires review to ensure accuracy
+/docs/                      @SaquibAnwar
+/README.md                  @SaquibAnwar
+/TESTING.md                 @SaquibAnwar
+
+# Test files to ensure quality
+/tests/                     @SaquibAnwar
+
+# Scripts that could affect development workflow
+/scripts/                   @SaquibAnwar
+
+# Environment and deployment configuration
+/.env.example               @SaquibAnwar
+/.dockerignore              @SaquibAnwar
+/.gitignore                 @SaquibAnwar
+
+# Security-sensitive files
+/src/utils/auth.ts          @SaquibAnwar
+/src/utils/middleware.ts    @SaquibAnwar 

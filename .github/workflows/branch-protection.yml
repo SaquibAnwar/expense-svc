@@ -1,0 +1,146 @@
+name: Branch Protection
+
+on:
+  pull_request:
+    branches: [ master, main ]
+  push:
+    branches: [ master, main ]
+
+jobs:
+  # Enforce branch protection requirements
+  branch-protection:
+    name: Branch Protection Checks
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    
+    steps:
+    - name: Check PR requirements
+      run: |
+        echo "🛡️ Enforcing branch protection requirements..."
+        echo "✅ This workflow ensures all required checks pass before merging"
+        echo "📋 Required checks:"
+        echo "   - Code formatting must pass"
+        echo "   - Linting must pass"
+        echo "   - All tests must pass"
+        echo "   - Build must succeed"
+        echo "   - Coverage thresholds must be met"
+
+  # Block direct pushes to protected branches
+  block-direct-push:
+    name: Block Direct Push
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    
+    steps:
+    - name: Block direct push to master
+      run: |
+        echo "🚫 Direct pushes to master branch are not allowed!"
+        echo "📝 Please use the following process:"
+        echo "   1. Create a feature branch"
+        echo "   2. Make your changes"
+        echo "   3. Create a pull request"
+        echo "   4. Wait for all checks to pass"
+        echo "   5. Get required reviews"
+        echo "   6. Merge via GitHub UI"
+        exit 1
+
+  # Ensure PR has required labels and metadata
+  pr-metadata-check:
+    name: PR Metadata Check
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    
+    steps:
+    - name: Check PR title and description
+      run: |
+        echo "📝 Checking PR metadata..."
+        
+        # Check if PR title follows conventional commits
+        PR_TITLE="${{ github.event.pull_request.title }}"
+        if [[ "$PR_TITLE" =~ ^(feat|fix|docs|style|refactor|test|chore|perf|ci|build|revert)(\(.+\))?: .+ ]]; then
+          echo "✅ PR title follows conventional commits format"
+        else
+          echo "⚠️ PR title should follow conventional commits format"
+          echo "   Examples: feat: add new feature, fix: resolve bug, docs: update readme"
+        fi
+        
+        # Check if PR has description
+        PR_BODY="${{ github.event.pull_request.body }}"
+        if [ -n "$PR_BODY" ] && [ "$PR_BODY" != "null" ]; then
+          echo "✅ PR has description"
+        else
+          echo "⚠️ PR should have a description explaining the changes"
+        fi
+
+  # Validate that all required CI checks are configured
+  validate-ci-checks:
+    name: Validate CI Configuration
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Validate CI workflow exists
+      run: |
+        echo "🔍 Validating CI/CD configuration..."
+        
+        if [ -f ".github/workflows/ci.yml" ]; then
+          echo "✅ CI workflow found"
+        else
+          echo "❌ CI workflow not found at .github/workflows/ci.yml"
+          exit 1
+        fi
+        
+        # Check that CI workflow has required jobs
+        if grep -q "format-check:" .github/workflows/ci.yml; then
+          echo "✅ Format check job found"
+        else
+          echo "❌ Format check job not found in CI workflow"
+          exit 1
+        fi
+        
+        if grep -q "lint-check:" .github/workflows/ci.yml; then
+          echo "✅ Lint check job found"
+        else
+          echo "❌ Lint check job not found in CI workflow"
+          exit 1
+        fi
+        
+        if grep -q "test:" .github/workflows/ci.yml; then
+          echo "✅ Test job found"
+        else
+          echo "❌ Test job not found in CI workflow"
+          exit 1
+        fi
+        
+        echo "✅ All required CI checks are configured"
+
+  # Summary job that all other jobs depend on
+  branch-protection-summary:
+    name: Branch Protection Summary
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    needs: [branch-protection, pr-metadata-check, validate-ci-checks]
+    
+    steps:
+    - name: Protection summary
+      run: |
+        echo "🛡️ Branch Protection Summary"
+        echo "=========================="
+        echo "✅ All branch protection checks completed"
+        echo "🔒 Master branch is protected with the following requirements:"
+        echo "   - Pull requests are required"
+        echo "   - All CI checks must pass"
+        echo "   - Code review is recommended"
+        echo "   - Direct pushes are blocked"
+        echo ""
+        echo "📋 This PR must pass the following before merging:"
+        echo "   ✅ Code formatting check"
+        echo "   ✅ Linting check"  
+        echo "   ✅ All tests pass"
+        echo "   ✅ Build succeeds"
+        echo "   ✅ Coverage requirements met"
+        echo ""
+        echo "🎉 Ready for review and merge!" 

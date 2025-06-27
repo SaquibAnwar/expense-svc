@@ -1,13 +1,5 @@
 import { FastifyPluginAsync } from 'fastify';
 import { authenticate, authHeaderSchema } from '../utils/middleware.js';
-<<<<<<< HEAD
-import {
-  createExpense,
-  getUserExpenses,
-  getUserExpense,
-  updateUserExpense,
-  deleteUserExpense,
-=======
 import { isGroupMember } from '../repositories/groupRepo.js';
 import {
   getUserExpenses,
@@ -15,7 +7,6 @@ import {
   createExpense,
   updateExpense,
   deleteExpense,
->>>>>>> master
 } from '../repositories/expenseRepo.js';
 
 interface ExpenseParams {
@@ -67,10 +58,6 @@ const expensesRoute: FastifyPluginAsync = async fastify => {
     },
     async (request, reply) => {
       try {
-<<<<<<< HEAD
-        const expenses = await getUserExpenses(request.user!.id);
-        return expenses;
-=======
         const expenses = await getUserExpenses(request.user!.id, {
           orderBy: 'paidAt',
           orderDirection: 'desc',
@@ -84,7 +71,6 @@ const expensesRoute: FastifyPluginAsync = async fastify => {
         }));
 
         return formattedExpenses;
->>>>>>> master
       } catch (error) {
         fastify.log.error('Error fetching expenses:', error);
         return reply.code(500).send({
@@ -149,11 +135,7 @@ const expensesRoute: FastifyPluginAsync = async fastify => {
           });
         }
 
-<<<<<<< HEAD
-        const expense = await getUserExpense(id, request.user!.id);
-=======
         const expense = await getExpenseById(id);
->>>>>>> master
 
         if (!expense || expense.userId !== request.user!.id) {
           return reply.code(404).send({
@@ -219,25 +201,38 @@ const expensesRoute: FastifyPluginAsync = async fastify => {
               userId: { type: 'integer' },
             },
           },
+          400: {
+            description: 'Validation error',
+            type: 'object',
+            properties: {
+              message: { type: 'string' },
+              error: { type: 'string' },
+              statusCode: { type: 'integer' },
+            },
+          },
+          403: {
+            description: 'Not authorized to add expense to group',
+            type: 'object',
+            properties: {
+              message: { type: 'string' },
+              error: { type: 'string' },
+              statusCode: { type: 'integer' },
+            },
+          },
         },
       },
     },
     async (request, reply) => {
       try {
-        const { title, description, amount, groupId } = request.body as CreateExpenseBody;
+        const { title, description, amount, groupId, categoryId } =
+          request.body as CreateExpenseBody;
 
-<<<<<<< HEAD
-        const expense = await createExpense({
-          title,
-          amount,
-          userId: request.user!.id,
-=======
-        // If groupId is provided, validate user is a member
+        // Validate that user can add expense to group (if groupId provided)
         if (groupId) {
           const isMember = await isGroupMember(groupId, request.user!.id);
           if (!isMember) {
             return reply.code(403).send({
-              message: 'Access denied. You are not a member of this group.',
+              message: 'You are not a member of this group',
               error: 'Forbidden',
               statusCode: 403,
             });
@@ -249,21 +244,19 @@ const expensesRoute: FastifyPluginAsync = async fastify => {
           description,
           amount,
           userId: request.user!.id,
-          groupId: groupId || undefined,
->>>>>>> master
+          groupId,
+          categoryId,
         });
 
         // Convert Decimal amounts to numbers for JSON response
-        const formattedExpense = {
+        return reply.code(201).send({
           ...expense,
           amount: expense.amount.toNumber(),
           splits: expense.splits.map(split => ({
             ...split,
             amount: split.amount.toNumber(),
           })),
-        };
-
-        return reply.code(201).send(formattedExpense);
+        });
       } catch (error) {
         fastify.log.error('Error creating expense:', error);
         return reply.code(500).send({
@@ -275,15 +268,15 @@ const expensesRoute: FastifyPluginAsync = async fastify => {
     }
   );
 
-  // PATCH /expenses/:id - Update expense
-  fastify.patch<{ Params: ExpenseParams; Body: UpdateExpenseBody }>(
+  // PUT /expenses/:id - Update user's expense
+  fastify.put<{ Params: ExpenseParams; Body: UpdateExpenseBody }>(
     '/expenses/:id',
     {
       preHandler: [authenticate],
       schema: {
         tags: ['expenses'],
-        summary: 'Update an expense',
-        description: 'Update an existing expense by ID (only accessible by the owner)',
+        summary: "Update user's expense",
+        description: 'Update a specific expense (only accessible by the owner)',
         headers: authHeaderSchema,
         params: {
           type: 'object',
@@ -297,6 +290,10 @@ const expensesRoute: FastifyPluginAsync = async fastify => {
           properties: {
             title: { type: 'string', description: 'Expense title' },
             amount: { type: 'number', description: 'Expense amount' },
+            categoryId: {
+              type: 'integer',
+              description: 'Category ID (optional, for categorized expenses)',
+            },
           },
         },
         response: {
@@ -335,17 +332,9 @@ const expensesRoute: FastifyPluginAsync = async fastify => {
           });
         }
 
-<<<<<<< HEAD
-        const updateData = request.body as UpdateExpenseBody;
-
-        const updatedExpense = await updateUserExpense(id, request.user!.id, updateData);
-
-        if (!updatedExpense) {
-=======
-        // Check if expense exists and belongs to user first
+        // First check if expense exists and belongs to user
         const existingExpense = await getExpenseById(id);
         if (!existingExpense || existingExpense.userId !== request.user!.id) {
->>>>>>> master
           return reply.code(404).send({
             message: 'Expense not found',
             error: 'Not Found',
@@ -353,11 +342,7 @@ const expensesRoute: FastifyPluginAsync = async fastify => {
           });
         }
 
-<<<<<<< HEAD
-        return updatedExpense;
-=======
-        const updateData = request.body as UpdateExpenseBody;
-        const updatedExpense = await updateExpense(id, updateData);
+        const updatedExpense = await updateExpense(id, request.body as UpdateExpenseBody);
 
         // Convert Decimal amounts to numbers for JSON response
         return {
@@ -368,7 +353,6 @@ const expensesRoute: FastifyPluginAsync = async fastify => {
             amount: split.amount.toNumber(),
           })),
         };
->>>>>>> master
       } catch (error) {
         fastify.log.error('Error updating expense:', error);
         return reply.code(500).send({
@@ -380,15 +364,15 @@ const expensesRoute: FastifyPluginAsync = async fastify => {
     }
   );
 
-  // DELETE /expenses/:id - Delete expense
+  // DELETE /expenses/:id - Delete user's expense
   fastify.delete<{ Params: ExpenseParams }>(
     '/expenses/:id',
     {
       preHandler: [authenticate],
       schema: {
         tags: ['expenses'],
-        summary: 'Delete an expense',
-        description: 'Delete an existing expense by ID (only accessible by the owner)',
+        summary: "Delete user's expense",
+        description: 'Delete a specific expense (only accessible by the owner)',
         headers: authHeaderSchema,
         params: {
           type: 'object',
@@ -429,15 +413,9 @@ const expensesRoute: FastifyPluginAsync = async fastify => {
           });
         }
 
-<<<<<<< HEAD
-        const deletedExpense = await deleteUserExpense(id, request.user!.id);
-
-        if (deletedExpense.count === 0) {
-=======
-        // Check if expense exists and belongs to user first
+        // First check if expense exists and belongs to user
         const existingExpense = await getExpenseById(id);
         if (!existingExpense || existingExpense.userId !== request.user!.id) {
->>>>>>> master
           return reply.code(404).send({
             message: 'Expense not found',
             error: 'Not Found',
@@ -446,6 +424,7 @@ const expensesRoute: FastifyPluginAsync = async fastify => {
         }
 
         await deleteExpense(id);
+
         return { message: 'Expense deleted successfully' };
       } catch (error) {
         fastify.log.error('Error deleting expense:', error);

@@ -84,6 +84,33 @@ export interface ExpenseListOptions {
   includeDetails?: boolean;
 }
 
+// Type for dynamic where clause in search
+interface ExpenseWhereClause {
+  userId?: number;
+  groupId?: number | null;
+  title?: {
+    contains: string;
+    mode: 'insensitive';
+  };
+  description?: {
+    contains: string;
+    mode: 'insensitive';
+  };
+  amount?: {
+    gte?: Decimal;
+    lte?: Decimal;
+  };
+  paidAt?: {
+    gte?: Date;
+    lte?: Date;
+  };
+  splits?: {
+    some: {
+      isPaid: boolean;
+    };
+  };
+}
+
 // ===== Core CRUD Operations =====
 
 /** Create a new expense */
@@ -195,29 +222,6 @@ export async function getExpenseById(id: number): Promise<ExpenseWithDetails | n
   });
 }
 
-<<<<<<< HEAD
-/** Get user's expense by id (ensures user ownership) */
-export async function getUserExpense(expenseId: number, userId: number) {
-  return prisma.expense.findFirst({
-    where: {
-      id: expenseId,
-      userId: userId,
-    },
-  });
-}
-
-/** Get all expenses for a specific user */
-export async function getUserExpenses(userId: number) {
-  return prisma.expense.findMany({
-    where: { userId },
-    orderBy: { id: 'desc' },
-  });
-}
-
-/** Update an expense (partial fields allowed) */
-export async function updateExpense(id: number, data: UpdateExpenseData) {
-  return prisma.expense.update({ where: { id }, data });
-=======
 /** Get basic expense by ID (minimal data) */
 export async function getExpense(id: number): Promise<Expense | null> {
   return prisma.expense.findUnique({
@@ -288,11 +292,14 @@ export async function updateExpense(
       },
     },
   });
->>>>>>> master
 }
 
 /** Update user's expense (ensures user ownership) */
-export async function updateUserExpense(expenseId: number, userId: number, data: UpdateExpenseData) {
+export async function updateUserExpense(
+  expenseId: number,
+  userId: number,
+  data: UpdateExpenseData
+) {
   const updateResult = await prisma.expense.updateMany({
     where: {
       id: expenseId,
@@ -319,14 +326,6 @@ export async function deleteExpense(id: number): Promise<Expense> {
   });
 }
 
-<<<<<<< HEAD
-/** Delete user's expense (ensures user ownership) */
-export async function deleteUserExpense(expenseId: number, userId: number) {
-  return prisma.expense.deleteMany({
-    where: {
-      id: expenseId,
-      userId: userId,
-=======
 // ===== User-specific Queries =====
 
 /** Get all expenses for a user */
@@ -430,16 +429,10 @@ export async function getUserExpenses(
           splits: true,
         },
       },
->>>>>>> master
     },
   });
 }
 
-<<<<<<< HEAD
-/** List all expenses (latest first) */
-export async function listExpenses() {
-  return prisma.expense.findMany({ orderBy: { id: 'desc' } });
-=======
 /** Get user's personal expenses (not group expenses) */
 export async function getUserPersonalExpenses(
   userId: number,
@@ -653,7 +646,7 @@ export async function searchExpenses(
   const { limit = 50, offset = 0, orderBy = 'paidAt', orderDirection = 'desc' } = options;
 
   // Build where clause dynamically
-  const whereClause: Record<string, any> = {};
+  const whereClause: ExpenseWhereClause = {};
 
   if (filters.userId) {
     whereClause.userId = filters.userId;
@@ -872,5 +865,4 @@ export async function listExpenses(): Promise<Expense[]> {
   return prisma.expense.findMany({
     orderBy: { id: 'desc' },
   });
->>>>>>> master
 }

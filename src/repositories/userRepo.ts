@@ -37,7 +37,17 @@ export interface LoginCredentials {
 
 /** Create a new user (for both local and OAuth registration) */
 export async function createUser(data: CreateUserData): Promise<User> {
-  const userData: any = {
+  const userData: {
+    email: string;
+    name: string;
+    username?: string;
+    phoneNumber?: string;
+    avatar?: string;
+    provider: string;
+    providerId?: string;
+    isEmailVerified: boolean;
+    password?: string;
+  } = {
     email: data.email,
     name: data.name,
     username: data.username,

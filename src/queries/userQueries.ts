@@ -88,4 +88,4 @@ export async function getUserByProviderQuery(provider: string, providerId: strin
       providerId,
     },
   });
-} 
+}

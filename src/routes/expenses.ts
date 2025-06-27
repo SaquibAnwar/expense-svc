@@ -1,11 +1,21 @@
 import { FastifyPluginAsync } from 'fastify';
 import { authenticate, authHeaderSchema } from '../utils/middleware.js';
+<<<<<<< HEAD
 import {
   createExpense,
   getUserExpenses,
   getUserExpense,
   updateUserExpense,
   deleteUserExpense,
+=======
+import { isGroupMember } from '../repositories/groupRepo.js';
+import {
+  getUserExpenses,
+  getExpenseById,
+  createExpense,
+  updateExpense,
+  deleteExpense,
+>>>>>>> master
 } from '../repositories/expenseRepo.js';
 
 interface ExpenseParams {
@@ -14,12 +24,16 @@ interface ExpenseParams {
 
 interface CreateExpenseBody {
   title: string;
+  description?: string;
   amount: number;
+  groupId?: number;
+  categoryId?: number;
 }
 
 interface UpdateExpenseBody {
   title?: string;
   amount?: number;
+  categoryId?: number;
 }
 
 const expensesRoute: FastifyPluginAsync = async fastify => {
@@ -53,8 +67,24 @@ const expensesRoute: FastifyPluginAsync = async fastify => {
     },
     async (request, reply) => {
       try {
+<<<<<<< HEAD
         const expenses = await getUserExpenses(request.user!.id);
         return expenses;
+=======
+        const expenses = await getUserExpenses(request.user!.id, {
+          orderBy: 'paidAt',
+          orderDirection: 'desc',
+          includeDetails: false, // For performance on list view
+        });
+
+        // Convert Decimal amounts to numbers for JSON response
+        const formattedExpenses = expenses.map(expense => ({
+          ...expense,
+          amount: expense.amount.toNumber(),
+        }));
+
+        return formattedExpenses;
+>>>>>>> master
       } catch (error) {
         fastify.log.error('Error fetching expenses:', error);
         return reply.code(500).send({
@@ -119,9 +149,13 @@ const expensesRoute: FastifyPluginAsync = async fastify => {
           });
         }
 
+<<<<<<< HEAD
         const expense = await getUserExpense(id, request.user!.id);
+=======
+        const expense = await getExpenseById(id);
+>>>>>>> master
 
-        if (!expense) {
+        if (!expense || expense.userId !== request.user!.id) {
           return reply.code(404).send({
             message: 'Expense not found',
             error: 'Not Found',
@@ -129,7 +163,15 @@ const expensesRoute: FastifyPluginAsync = async fastify => {
           });
         }
 
-        return expense;
+        // Convert Decimal amounts to numbers for JSON response
+        return {
+          ...expense,
+          amount: expense.amount.toNumber(),
+          splits: expense.splits.map(split => ({
+            ...split,
+            amount: split.amount.toNumber(),
+          })),
+        };
       } catch (error) {
         fastify.log.error('Error fetching expense:', error);
         return reply.code(500).send({
@@ -155,7 +197,13 @@ const expensesRoute: FastifyPluginAsync = async fastify => {
           type: 'object',
           properties: {
             title: { type: 'string', description: 'Expense title' },
+            description: { type: 'string', description: 'Expense description' },
             amount: { type: 'number', description: 'Expense amount' },
+            groupId: { type: 'integer', description: 'Group ID (optional, for group expenses)' },
+            categoryId: {
+              type: 'integer',
+              description: 'Category ID (optional, for categorized expenses)',
+            },
           },
           required: ['title', 'amount'],
         },
@@ -176,15 +224,46 @@ const expensesRoute: FastifyPluginAsync = async fastify => {
     },
     async (request, reply) => {
       try {
-        const { title, amount } = request.body as CreateExpenseBody;
+        const { title, description, amount, groupId } = request.body as CreateExpenseBody;
 
+<<<<<<< HEAD
         const expense = await createExpense({
           title,
           amount,
           userId: request.user!.id,
+=======
+        // If groupId is provided, validate user is a member
+        if (groupId) {
+          const isMember = await isGroupMember(groupId, request.user!.id);
+          if (!isMember) {
+            return reply.code(403).send({
+              message: 'Access denied. You are not a member of this group.',
+              error: 'Forbidden',
+              statusCode: 403,
+            });
+          }
+        }
+
+        const expense = await createExpense({
+          title,
+          description,
+          amount,
+          userId: request.user!.id,
+          groupId: groupId || undefined,
+>>>>>>> master
         });
 
-        return reply.code(201).send(expense);
+        // Convert Decimal amounts to numbers for JSON response
+        const formattedExpense = {
+          ...expense,
+          amount: expense.amount.toNumber(),
+          splits: expense.splits.map(split => ({
+            ...split,
+            amount: split.amount.toNumber(),
+          })),
+        };
+
+        return reply.code(201).send(formattedExpense);
       } catch (error) {
         fastify.log.error('Error creating expense:', error);
         return reply.code(500).send({
@@ -256,11 +335,17 @@ const expensesRoute: FastifyPluginAsync = async fastify => {
           });
         }
 
+<<<<<<< HEAD
         const updateData = request.body as UpdateExpenseBody;
 
         const updatedExpense = await updateUserExpense(id, request.user!.id, updateData);
 
         if (!updatedExpense) {
+=======
+        // Check if expense exists and belongs to user first
+        const existingExpense = await getExpenseById(id);
+        if (!existingExpense || existingExpense.userId !== request.user!.id) {
+>>>>>>> master
           return reply.code(404).send({
             message: 'Expense not found',
             error: 'Not Found',
@@ -268,7 +353,22 @@ const expensesRoute: FastifyPluginAsync = async fastify => {
           });
         }
 
+<<<<<<< HEAD
         return updatedExpense;
+=======
+        const updateData = request.body as UpdateExpenseBody;
+        const updatedExpense = await updateExpense(id, updateData);
+
+        // Convert Decimal amounts to numbers for JSON response
+        return {
+          ...updatedExpense,
+          amount: updatedExpense.amount.toNumber(),
+          splits: updatedExpense.splits.map(split => ({
+            ...split,
+            amount: split.amount.toNumber(),
+          })),
+        };
+>>>>>>> master
       } catch (error) {
         fastify.log.error('Error updating expense:', error);
         return reply.code(500).send({
@@ -329,9 +429,15 @@ const expensesRoute: FastifyPluginAsync = async fastify => {
           });
         }
 
+<<<<<<< HEAD
         const deletedExpense = await deleteUserExpense(id, request.user!.id);
 
         if (deletedExpense.count === 0) {
+=======
+        // Check if expense exists and belongs to user first
+        const existingExpense = await getExpenseById(id);
+        if (!existingExpense || existingExpense.userId !== request.user!.id) {
+>>>>>>> master
           return reply.code(404).send({
             message: 'Expense not found',
             error: 'Not Found',
@@ -339,6 +445,7 @@ const expensesRoute: FastifyPluginAsync = async fastify => {
           });
         }
 
+        await deleteExpense(id);
         return { message: 'Expense deleted successfully' };
       } catch (error) {
         fastify.log.error('Error deleting expense:', error);

@@ -36,18 +36,173 @@ model User {
   lastLoginAt DateTime?
   
   // Relations
-  expenses    Expense[]
+  expenses       Expense[]
+  createdGroups  Group[]       @relation("GroupCreator")
+  groupMembers   GroupMember[]
+  expenseSplits  ExpenseSplit[]
+  categories     Category[]    // User can create custom categories
+  
+  // Friend system relations
+  sentFriendRequests     FriendRequest[] @relation("FriendRequestSender")
+  receivedFriendRequests FriendRequest[] @relation("FriendRequestReceiver")
+  friendships1           Friendship[]    @relation("FriendshipUser1")
+  friendships2           Friendship[]    @relation("FriendshipUser2")
   
   @@map("users")
 }
 
+model Category {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String?
+  icon        String   // Icon name/identifier (e.g., "food", "car", "home")
+  color       String   // Hex color code (e.g., "#FF5733")
+  isDefault   Boolean  @default(false) // True for system default categories
+  isActive    Boolean  @default(true)
+  
+  // Timestamps
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  userId      Int?     // Null for default categories, set for custom user categories
+  user        User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expenses    Expense[]
+  
+  // Ensure unique category names per user (including default categories)
+  @@unique([name, userId])
+  @@map("categories")
+}
+
+model Group {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String?
+  avatar      String?  // Group avatar/image URL
+  isActive    Boolean  @default(true)
+  
+  // Timestamps
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  createdBy   Int
+  creator     User          @relation("GroupCreator", fields: [createdBy], references: [id])
+  members     GroupMember[]
+  expenses    Expense[]
+  
+  @@map("groups")
+}
+
+model GroupMember {
+  id       Int           @id @default(autoincrement())
+  role     GroupMemberRole @default(MEMBER)
+  joinedAt DateTime      @default(now())
+  
+  // Relations
+  groupId  Int
+  userId   Int
+  group    Group         @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user     User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Ensure unique user per group
+  @@unique([groupId, userId])
+  @@map("group_members")
+}
+
 model Expense {
-  id        Int      @id @default(autoincrement())
-  title     String
-  amount    Decimal
-  paidAt    DateTime @default(now())
-  userId    Int
-  user      User     @relation(fields: [userId], references: [id])
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String?  // Optional expense description
+  amount      Decimal
+  paidAt      DateTime @default(now())
+  
+  // Relations
+  userId      Int
+  user        User     @relation(fields: [userId], references: [id])
+  groupId     Int?     // Optional - expense can be personal or group
+  group       Group?   @relation(fields: [groupId], references: [id])
+  categoryId  Int?     // Optional - expense can have a category
+  category    Category? @relation(fields: [categoryId], references: [id])
+  
+  // New relation for expense splits
+  splits      ExpenseSplit[]
   
   @@map("expenses")
+}
+
+model ExpenseSplit {
+  id          Int         @id @default(autoincrement())
+  amount      Decimal     // The amount this user owes for this expense
+  splitType   SplitType   @default(EQUAL)
+  percentage  Float?      // Only used for PERCENTAGE splits (0-100)
+  isPaid      Boolean     @default(false) // Track if this split has been settled
+  
+  // Timestamps
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  
+  // Relations
+  expenseId   Int
+  expense     Expense     @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  userId      Int
+  user        User        @relation(fields: [userId], references: [id])
+  
+  // Ensure unique split per user per expense
+  @@unique([expenseId, userId])
+  @@map("expense_splits")
+}
+
+// Friend system models
+model FriendRequest {
+  id         Int                   @id @default(autoincrement())
+  status     FriendRequestStatus   @default(PENDING)
+  message    String?               // Optional message when sending request
+  
+  // Timestamps
+  createdAt  DateTime              @default(now())
+  updatedAt  DateTime              @updatedAt
+  respondedAt DateTime?            // When request was accepted/declined
+  
+  // Relations
+  senderId   Int
+  receiverId Int
+  sender     User                  @relation("FriendRequestSender", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver   User                  @relation("FriendRequestReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+  
+  // Prevent duplicate friend requests
+  @@unique([senderId, receiverId])
+  @@map("friend_requests")
+}
+
+model Friendship {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  
+  // Relations - bidirectional friendship
+  user1Id   Int
+  user2Id   Int
+  user1     User     @relation("FriendshipUser1", fields: [user1Id], references: [id], onDelete: Cascade)
+  user2     User     @relation("FriendshipUser2", fields: [user2Id], references: [id], onDelete: Cascade)
+  
+  // Ensure unique friendship and prevent self-friendship
+  @@unique([user1Id, user2Id])
+  @@map("friendships")
+}
+
+enum GroupMemberRole {
+  ADMIN
+  MEMBER
+}
+
+enum SplitType {
+  EQUAL       // Split equally among participants
+  AMOUNT      // Split by specific amounts
+  PERCENTAGE  // Split by percentages
+}
+
+enum FriendRequestStatus {
+  PENDING   // Request sent but not responded to
+  ACCEPTED  // Request accepted (friendship created)
+  DECLINED  // Request declined
 }

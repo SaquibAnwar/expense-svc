@@ -9,6 +9,7 @@ import expenseSplitsRoute from './routes/expenseSplits.js';
 import settlementsRoute from './routes/settlements.js';
 import usersRoute from './routes/users.js';
 import groupsRoute from './routes/groups.js';
+import friendsRoute from './routes/friends.js';
 
 // Initialize Prisma client
 export const prisma = new PrismaClient();
@@ -41,6 +42,7 @@ async function createApp() {
         { name: 'expense-splits', description: 'Expense splitting endpoints' },
         { name: 'settlements', description: 'Settlement tracking endpoints' },
         { name: 'groups', description: 'Group management endpoints' },
+        { name: 'friends', description: 'Friend system endpoints' },
       ],
     },
   });
@@ -62,6 +64,7 @@ async function createApp() {
   await app.register(expenseSplitsRoute, { prefix: '/api/v1' });
   await app.register(settlementsRoute, { prefix: '/api/v1' });
   await app.register(groupsRoute, { prefix: '/api/v1' });
+  await app.register(friendsRoute, { prefix: '/api/v1' });
 
   // Graceful shutdown
   const gracefulShutdown = async () => {

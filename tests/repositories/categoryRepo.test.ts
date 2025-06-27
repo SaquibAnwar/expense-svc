@@ -16,6 +16,7 @@ const mockPrisma = {
     aggregate: jest.fn(),
     count: jest.fn(),
     groupBy: jest.fn(),
+    findMany: jest.fn(),
   },
 } as any;
 
@@ -237,6 +238,13 @@ describe('CategoryRepository', () => {
         _avg: { amount: true },
         _max: { paidAt: true },
       });
+
+      expect(result).toEqual({
+        ...mockCategory,
+        totalAmount: new Decimal(500),
+        averageAmount: new Decimal(100),
+        lastUsed: new Date('2023-12-01'),
+      });
     });
 
     it('should return null when category not found', async () => {
@@ -445,7 +453,7 @@ describe('CategoryRepository', () => {
         _max: { paidAt: new Date('2023-12-01') },
       });
 
-      await getUserCategories(123, { includeStats: true });
+      const result = await getUserCategories(123, { includeStats: true });
 
       expect(mockPrisma.category.findMany).toHaveBeenCalledWith({
         where: {
@@ -461,10 +469,24 @@ describe('CategoryRepository', () => {
             },
           },
         },
-        orderBy: { name: 'asc' },
         take: 50,
         skip: 0,
       });
+
+      expect(mockPrisma.expense.aggregate).toHaveBeenCalledWith({
+        where: {
+          categoryId: 1,
+          userId: 123,
+        },
+        _sum: { amount: true },
+        _avg: { amount: true },
+        _max: { paidAt: true },
+      });
+
+      expect(result).toHaveLength(1);
+      expect(result[0]).toHaveProperty('totalAmount');
+      expect(result[0]).toHaveProperty('averageAmount');
+      expect(result[0]).toHaveProperty('lastUsed');
     });
 
     it('should respect pagination options', async () => {
@@ -559,9 +581,9 @@ describe('CategoryRepository', () => {
 
       expect(mockPrisma.category.findMany).toHaveBeenCalledWith({
         where: {
-          OR: [{ isDefault: true }, { userId: 123 }],
           isActive: true,
           isDefault: true,
+          OR: [{ isDefault: true }, { userId: 123 }],
           name: {
             contains: 'Food',
             mode: 'insensitive',
@@ -586,8 +608,8 @@ describe('CategoryRepository', () => {
 
       expect(mockPrisma.category.findMany).toHaveBeenCalledWith({
         where: {
-          userId: 123,
           isActive: true,
+          userId: 123,
         },
         orderBy: { name: 'asc' },
         take: 50,
@@ -598,15 +620,6 @@ describe('CategoryRepository', () => {
 
   describe('getCategorySpendingSummary', () => {
     it('should get category spending summary', async () => {
-      const mockCategories = [
-        {
-          id: 1,
-          name: 'Food',
-          icon: '🍔',
-          color: '#FF5733',
-        },
-      ];
-
       const mockExpenses = [
         {
           categoryId: 1,
@@ -634,11 +647,27 @@ describe('CategoryRepository', () => {
         _sum: { amount: new Decimal(1000) },
       };
 
-      mockPrisma.category.findMany.mockResolvedValue(mockCategories);
       mockPrisma.expense.findMany.mockResolvedValue(mockExpenses);
       mockPrisma.expense.aggregate.mockResolvedValue(mockTotalSpending);
 
       const result = await getCategorySpendingSummary(123);
+
+      expect(mockPrisma.expense.aggregate).toHaveBeenCalledWith({
+        where: { userId: 123 },
+        _sum: { amount: true },
+      });
+
+      expect(mockPrisma.expense.findMany).toHaveBeenCalledWith({
+        where: {
+          userId: 123,
+          categoryId: { not: null },
+        },
+        include: {
+          category: {
+            select: { name: true, icon: true, color: true },
+          },
+        },
+      });
 
       expect(result).toHaveLength(1);
       expect(result[0]).toEqual({
@@ -655,7 +684,6 @@ describe('CategoryRepository', () => {
     });
 
     it('should handle date filters', async () => {
-      mockPrisma.category.findMany.mockResolvedValue([]);
       mockPrisma.expense.findMany.mockResolvedValue([]);
       mockPrisma.expense.aggregate.mockResolvedValue({ _sum: { amount: new Decimal(0) } });
 
@@ -664,48 +692,60 @@ describe('CategoryRepository', () => {
 
       await getCategorySpendingSummary(123, { fromDate, toDate, limit: 10 });
 
-      expect(mockPrisma.expense.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: {
-            userId: 123,
-            categoryId: { not: null },
-            paidAt: {
-              gte: fromDate,
-              lte: toDate,
-            },
+      expect(mockPrisma.expense.aggregate).toHaveBeenCalledWith({
+        where: {
+          userId: 123,
+          paidAt: {
+            gte: fromDate,
+            lte: toDate,
           },
-        })
-      );
+        },
+        _sum: { amount: true },
+      });
+
+      expect(mockPrisma.expense.findMany).toHaveBeenCalledWith({
+        where: {
+          userId: 123,
+          categoryId: { not: null },
+          paidAt: {
+            gte: fromDate,
+            lte: toDate,
+          },
+        },
+        include: {
+          category: {
+            select: { name: true, icon: true, color: true },
+          },
+        },
+      });
     });
   });
 
   describe('getTopSpendingCategories', () => {
     it('should get top spending categories', async () => {
-      // Test the actual implementation by mocking the dependencies
-      mockPrisma.category.findMany.mockResolvedValue([
-        {
-          id: 1,
-          name: 'Food',
-          icon: '🍔',
-          color: '#FF5733',
-        },
-      ]);
-
-      mockPrisma.expense.groupBy.mockResolvedValue([
+      const mockExpenses = [
         {
           categoryId: 1,
-          _sum: { amount: new Decimal(500) },
-          _count: { _all: 5 },
+          category: {
+            name: 'Food',
+            icon: '🍔',
+            color: '#FF5733',
+          },
+          amount: new Decimal(500),
+          paidAt: new Date('2023-12-01'),
         },
-      ]);
+      ];
 
+      mockPrisma.expense.findMany.mockResolvedValue(mockExpenses);
       mockPrisma.expense.aggregate.mockResolvedValue({
         _sum: { amount: new Decimal(1000) },
       });
 
-      await getTopSpendingCategories(123, 5, new Date('2023-01-01'));
+      const result = await getTopSpendingCategories(123, 5, new Date('2023-01-01'));
 
-      expect(mockPrisma.category.findMany).toHaveBeenCalled();
+      expect(mockPrisma.expense.aggregate).toHaveBeenCalled();
+      expect(mockPrisma.expense.findMany).toHaveBeenCalled();
+      expect(result).toHaveLength(1);
     });
   });
 
@@ -785,4 +825,4 @@ describe('CategoryRepository', () => {
       expect(result).toBe(false);
     });
   });
-}); 
+});

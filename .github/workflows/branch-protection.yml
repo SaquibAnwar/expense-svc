@@ -66,8 +66,8 @@ jobs:
         fi
         
         # Check if PR has description
-        PR_BODY_LENGTH=$(echo '${{ github.event.pull_request.body }}' | wc -c)
-        if [ "$PR_BODY_LENGTH" -gt 10 ]; then
+        PR_BODY="${{ github.event.pull_request.body }}"
+        if [ ${#PR_BODY} -gt 10 ]; then
           echo "✅ PR has description"
         else
           echo "⚠️ PR should have a description explaining the changes"

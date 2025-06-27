@@ -52,12 +52,13 @@ jobs:
     
     steps:
     - name: Check PR title and description
+      shell: bash
       run: |
         echo "📝 Checking PR metadata..."
         
         # Check if PR title follows conventional commits
         PR_TITLE="${{ github.event.pull_request.title }}"
-        if [[ "$PR_TITLE" =~ ^(feat|fix|docs|style|refactor|test|chore|perf|ci|build|revert)(\(.+\))?: .+ ]]; then
+        if echo "$PR_TITLE" | grep -Eq '^(feat|fix|docs|style|refactor|test|chore|perf|ci|build|revert)(\(.+\))?: .+'; then
           echo "✅ PR title follows conventional commits format"
         else
           echo "⚠️ PR title should follow conventional commits format"

@@ -1,6 +1,12 @@
 import { FastifyPluginAsync } from 'fastify';
-import { prisma } from '../app.js';
 import { authenticate, authHeaderSchema } from '../utils/middleware.js';
+import {
+  createExpense,
+  getUserExpenses,
+  getUserExpense,
+  updateUserExpense,
+  deleteUserExpense,
+} from '../repositories/expenseRepo.js';
 
 interface ExpenseParams {
   id: string;
@@ -47,10 +53,7 @@ const expensesRoute: FastifyPluginAsync = async fastify => {
     },
     async (request, reply) => {
       try {
-        const expenses = await prisma.expense.findMany({
-          where: { userId: request.user!.id },
-          orderBy: { id: 'desc' },
-        });
+        const expenses = await getUserExpenses(request.user!.id);
         return expenses;
       } catch (error) {
         fastify.log.error('Error fetching expenses:', error);
@@ -116,12 +119,7 @@ const expensesRoute: FastifyPluginAsync = async fastify => {
           });
         }
 
-        const expense = await prisma.expense.findFirst({
-          where: {
-            id,
-            userId: request.user!.id, // Ensure user can only access their own expenses
-          },
-        });
+        const expense = await getUserExpense(id, request.user!.id);
 
         if (!expense) {
           return reply.code(404).send({
@@ -180,12 +178,10 @@ const expensesRoute: FastifyPluginAsync = async fastify => {
       try {
         const { title, amount } = request.body as CreateExpenseBody;
 
-        const expense = await prisma.expense.create({
-          data: {
-            title,
-            amount,
-            userId: request.user!.id, // Use authenticated user's ID
-          },
+        const expense = await createExpense({
+          title,
+          amount,
+          userId: request.user!.id,
         });
 
         return reply.code(201).send(expense);
@@ -262,26 +258,15 @@ const expensesRoute: FastifyPluginAsync = async fastify => {
 
         const updateData = request.body as UpdateExpenseBody;
 
-        const expense = await prisma.expense.updateMany({
-          where: {
-            id,
-            userId: request.user!.id, // Ensure user can only update their own expenses
-          },
-          data: updateData,
-        });
+        const updatedExpense = await updateUserExpense(id, request.user!.id, updateData);
 
-        if (expense.count === 0) {
+        if (!updatedExpense) {
           return reply.code(404).send({
             message: 'Expense not found',
             error: 'Not Found',
             statusCode: 404,
           });
         }
-
-        // Fetch and return the updated expense
-        const updatedExpense = await prisma.expense.findFirst({
-          where: { id, userId: request.user!.id },
-        });
 
         return updatedExpense;
       } catch (error) {
@@ -344,12 +329,7 @@ const expensesRoute: FastifyPluginAsync = async fastify => {
           });
         }
 
-        const deletedExpense = await prisma.expense.deleteMany({
-          where: {
-            id,
-            userId: request.user!.id, // Ensure user can only delete their own expenses
-          },
-        });
+        const deletedExpense = await deleteUserExpense(id, request.user!.id);
 
         if (deletedExpense.count === 0) {
           return reply.code(404).send({

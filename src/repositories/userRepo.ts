@@ -1,5 +1,11 @@
 import { PrismaClient, User } from '@prisma/client';
 import bcrypt from 'bcryptjs';
+import {
+  getUserProfileQuery,
+  listUsersQuery,
+  getUserWithExpensesQuery,
+  getUserByProviderQuery,
+} from '../queries/userQueries.js';
 
 const prisma = new PrismaClient();
 
@@ -52,15 +58,7 @@ export async function createUser(data: CreateUserData): Promise<User> {
 
 /** Get user by ID */
 export async function getUserById(id: number): Promise<User | null> {
-  return prisma.user.findUnique({
-    where: { id },
-    include: {
-      expenses: {
-        orderBy: { paidAt: 'desc' },
-        take: 10, // Only include recent expenses
-      },
-    },
-  });
+  return getUserWithExpensesQuery(id);
 }
 
 /** Get user by email */
@@ -82,12 +80,7 @@ export async function getUserByProvider(
   provider: string,
   providerId: string
 ): Promise<User | null> {
-  return prisma.user.findFirst({
-    where: {
-      provider,
-      providerId,
-    },
-  });
+  return getUserByProviderQuery(provider, providerId);
 }
 
 /** Update user data */
@@ -145,52 +138,12 @@ export async function isUsernameTaken(username: string): Promise<boolean> {
 
 /** Get user profile (without sensitive data) */
 export async function getUserProfile(id: number) {
-  return prisma.user.findUnique({
-    where: { id },
-    select: {
-      id: true,
-      email: true,
-      name: true,
-      username: true,
-      avatar: true,
-      phoneNumber: true,
-      provider: true,
-      isEmailVerified: true,
-      createdAt: true,
-      updatedAt: true,
-      lastLoginAt: true,
-      expenses: {
-        select: {
-          id: true,
-          title: true,
-          amount: true,
-          paidAt: true,
-        },
-        orderBy: { paidAt: 'desc' },
-        take: 5,
-      },
-    },
-  });
+  return getUserProfileQuery(id);
 }
 
 /** List all users (for admin purposes) */
 export async function listUsers(skip: number = 0, take: number = 20) {
-  return prisma.user.findMany({
-    skip,
-    take,
-    select: {
-      id: true,
-      email: true,
-      name: true,
-      username: true,
-      provider: true,
-      isEmailVerified: true,
-      isActive: true,
-      createdAt: true,
-      lastLoginAt: true,
-    },
-    orderBy: { createdAt: 'desc' },
-  });
+  return listUsersQuery(skip, take);
 }
 
 /** Soft delete user (deactivate) */

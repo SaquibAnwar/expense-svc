@@ -44,34 +44,7 @@ jobs:
         echo "   6. Merge via GitHub UI"
         exit 1
 
-  # Ensure PR has required labels and metadata
-  pr-metadata-check:
-    name: PR Metadata Check
-    runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
-    
-    steps:
-    - name: Check PR title and description
-      shell: bash
-      run: |
-        echo "📝 Checking PR metadata..."
-        
-        # Check if PR title follows conventional commits
-        PR_TITLE="${{ github.event.pull_request.title }}"
-        if echo "$PR_TITLE" | grep -Eq '^(feat|fix|docs|style|refactor|test|chore|perf|ci|build|revert)(\(.+\))?: .+'; then
-          echo "✅ PR title follows conventional commits format"
-        else
-          echo "⚠️ PR title should follow conventional commits format"
-          echo "   Examples: feat: add new feature, fix: resolve bug, docs: update readme"
-        fi
-        
-        # Check if PR has description
-        PR_BODY="${{ github.event.pull_request.body }}"
-        if [ ${#PR_BODY} -gt 10 ]; then
-          echo "✅ PR has description"
-        else
-          echo "⚠️ PR should have a description explaining the changes"
-        fi
+
 
   # Validate that all required CI checks are configured
   validate-ci-checks:
@@ -123,7 +96,7 @@ jobs:
     name: Branch Protection Summary
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
-    needs: [branch-protection, pr-metadata-check, validate-ci-checks]
+    needs: [branch-protection, validate-ci-checks]
     
     steps:
     - name: Protection summary

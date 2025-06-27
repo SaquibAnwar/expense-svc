@@ -1,11 +1,11 @@
 import { FastifyPluginAsync } from 'fastify';
 import { authenticate, authHeaderSchema } from '../utils/middleware.js';
 import { isGroupMember } from '../repositories/groupRepo.js';
-import { 
-  getUserExpenses, 
-  getExpenseById, 
-  createExpense, 
-  updateExpense, 
+import {
+  getUserExpenses,
+  getExpenseById,
+  createExpense,
+  updateExpense,
   deleteExpense,
 } from '../repositories/expenseRepo.js';
 

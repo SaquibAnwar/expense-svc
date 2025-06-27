@@ -582,7 +582,10 @@ export async function searchExpenses(
     };
   }
 
-  if (filters.minAmount !== null && filters.minAmount !== undefined || filters.maxAmount !== null && filters.maxAmount !== undefined) {
+  if (
+    (filters.minAmount !== null && filters.minAmount !== undefined) ||
+    (filters.maxAmount !== null && filters.maxAmount !== undefined)
+  ) {
     whereClause.amount = {};
     if (filters.minAmount !== null && filters.minAmount !== undefined) {
       whereClause.amount.gte = new Decimal(filters.minAmount);

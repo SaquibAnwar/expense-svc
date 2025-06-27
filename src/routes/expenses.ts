@@ -1,7 +1,13 @@
 import { FastifyPluginAsync } from 'fastify';
-import { prisma } from '../app.js';
 import { authenticate, authHeaderSchema } from '../utils/middleware.js';
 import { isGroupMember } from '../repositories/groupRepo.js';
+import {
+  getUserExpenses,
+  getExpenseById,
+  createExpense,
+  updateExpense,
+  deleteExpense,
+} from '../repositories/expenseRepo.js';
 
 interface ExpenseParams {
   id: string;
@@ -50,11 +56,19 @@ const expensesRoute: FastifyPluginAsync = async fastify => {
     },
     async (request, reply) => {
       try {
-        const expenses = await prisma.expense.findMany({
-          where: { userId: request.user!.id },
-          orderBy: { id: 'desc' },
+        const expenses = await getUserExpenses(request.user!.id, {
+          orderBy: 'paidAt',
+          orderDirection: 'desc',
+          includeDetails: false, // For performance on list view
         });
-        return expenses;
+
+        // Convert Decimal amounts to numbers for JSON response
+        const formattedExpenses = expenses.map(expense => ({
+          ...expense,
+          amount: expense.amount.toNumber(),
+        }));
+
+        return formattedExpenses;
       } catch (error) {
         fastify.log.error('Error fetching expenses:', error);
         return reply.code(500).send({
@@ -119,14 +133,9 @@ const expensesRoute: FastifyPluginAsync = async fastify => {
           });
         }
 
-        const expense = await prisma.expense.findFirst({
-          where: {
-            id,
-            userId: request.user!.id, // Ensure user can only access their own expenses
-          },
-        });
+        const expense = await getExpenseById(id);
 
-        if (!expense) {
+        if (!expense || expense.userId !== request.user!.id) {
           return reply.code(404).send({
             message: 'Expense not found',
             error: 'Not Found',
@@ -134,7 +143,15 @@ const expensesRoute: FastifyPluginAsync = async fastify => {
           });
         }
 
-        return expense;
+        // Convert Decimal amounts to numbers for JSON response
+        return {
+          ...expense,
+          amount: expense.amount.toNumber(),
+          splits: expense.splits.map(split => ({
+            ...split,
+            amount: split.amount.toNumber(),
+          })),
+        };
       } catch (error) {
         fastify.log.error('Error fetching expense:', error);
         return reply.code(500).send({
@@ -197,34 +214,25 @@ const expensesRoute: FastifyPluginAsync = async fastify => {
           }
         }
 
-        const expense = await prisma.expense.create({
-          data: {
-            title,
-            description,
-            amount,
-            userId: request.user!.id,
-            groupId: groupId || null,
-          },
-          include: {
-            user: {
-              select: {
-                id: true,
-                name: true,
-                username: true,
-              },
-            },
-            group: groupId
-              ? {
-                  select: {
-                    id: true,
-                    name: true,
-                  },
-                }
-              : false,
-          },
+        const expense = await createExpense({
+          title,
+          description,
+          amount,
+          userId: request.user!.id,
+          groupId: groupId || undefined,
         });
 
-        return reply.code(201).send(expense);
+        // Convert Decimal amounts to numbers for JSON response
+        const formattedExpense = {
+          ...expense,
+          amount: expense.amount.toNumber(),
+          splits: expense.splits.map(split => ({
+            ...split,
+            amount: split.amount.toNumber(),
+          })),
+        };
+
+        return reply.code(201).send(formattedExpense);
       } catch (error) {
         fastify.log.error('Error creating expense:', error);
         return reply.code(500).send({
@@ -296,17 +304,9 @@ const expensesRoute: FastifyPluginAsync = async fastify => {
           });
         }
 
-        const updateData = request.body as UpdateExpenseBody;
-
-        const expense = await prisma.expense.updateMany({
-          where: {
-            id,
-            userId: request.user!.id, // Ensure user can only update their own expenses
-          },
-          data: updateData,
-        });
-
-        if (expense.count === 0) {
+        // Check if expense exists and belongs to user first
+        const existingExpense = await getExpenseById(id);
+        if (!existingExpense || existingExpense.userId !== request.user!.id) {
           return reply.code(404).send({
             message: 'Expense not found',
             error: 'Not Found',
@@ -314,12 +314,18 @@ const expensesRoute: FastifyPluginAsync = async fastify => {
           });
         }
 
-        // Fetch and return the updated expense
-        const updatedExpense = await prisma.expense.findFirst({
-          where: { id, userId: request.user!.id },
-        });
+        const updateData = request.body as UpdateExpenseBody;
+        const updatedExpense = await updateExpense(id, updateData);
 
-        return updatedExpense;
+        // Convert Decimal amounts to numbers for JSON response
+        return {
+          ...updatedExpense,
+          amount: updatedExpense.amount.toNumber(),
+          splits: updatedExpense.splits.map(split => ({
+            ...split,
+            amount: split.amount.toNumber(),
+          })),
+        };
       } catch (error) {
         fastify.log.error('Error updating expense:', error);
         return reply.code(500).send({
@@ -380,14 +386,9 @@ const expensesRoute: FastifyPluginAsync = async fastify => {
           });
         }
 
-        const deletedExpense = await prisma.expense.deleteMany({
-          where: {
-            id,
-            userId: request.user!.id, // Ensure user can only delete their own expenses
-          },
-        });
-
-        if (deletedExpense.count === 0) {
+        // Check if expense exists and belongs to user first
+        const existingExpense = await getExpenseById(id);
+        if (!existingExpense || existingExpense.userId !== request.user!.id) {
           return reply.code(404).send({
             message: 'Expense not found',
             error: 'Not Found',
@@ -395,6 +396,7 @@ const expensesRoute: FastifyPluginAsync = async fastify => {
           });
         }
 
+        await deleteExpense(id);
         return { message: 'Expense deleted successfully' };
       } catch (error) {
         fastify.log.error('Error deleting expense:', error);

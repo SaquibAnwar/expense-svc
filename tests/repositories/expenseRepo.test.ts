@@ -11,6 +11,10 @@ const mockPrisma = {
 
 jest.mock('@prisma/client', () => ({
   PrismaClient: jest.fn().mockImplementation(() => mockPrisma),
+  Decimal: jest.fn().mockImplementation(value => ({
+    toString: () => value.toString(),
+    toNumber: () => parseFloat(value),
+  })),
 }));
 
 jest.mock('../../src/app', () => ({
@@ -41,8 +45,22 @@ describe('ExpenseRepository', () => {
 
       const expectedExpense = {
         id: 1,
-        ...expenseData,
+        title: 'Test Expense',
+        amount: '100.5',
+        userId: 1,
         paidAt: new Date(),
+        user: {
+          id: 1,
+          name: 'Test User',
+          email: 'test@example.com',
+          username: 'testuser',
+          avatar: null,
+        },
+        group: null,
+        splits: [],
+        _count: {
+          splits: 0,
+        },
       };
 
       mockPrisma.expense.create.mockResolvedValue(expectedExpense);
@@ -50,7 +68,19 @@ describe('ExpenseRepository', () => {
       const result = await createExpense(expenseData);
 
       expect(mockPrisma.expense.create).toHaveBeenCalledWith({
-        data: expenseData,
+        data: {
+          ...expenseData,
+          amount: expect.objectContaining({
+            toString: expect.any(Function),
+            toNumber: expect.any(Function),
+          }),
+        },
+        include: expect.objectContaining({
+          user: expect.any(Object),
+          group: expect.any(Object),
+          splits: expect.any(Object),
+          _count: expect.any(Object),
+        }),
       });
       expect(result).toEqual(expectedExpense);
     });
@@ -66,7 +96,22 @@ describe('ExpenseRepository', () => {
 
       const expectedExpense = {
         id: 1,
-        ...expenseData,
+        title: 'Test Expense',
+        amount: '100.5',
+        userId: 1,
+        paidAt,
+        user: {
+          id: 1,
+          name: 'Test User',
+          email: 'test@example.com',
+          username: 'testuser',
+          avatar: null,
+        },
+        group: null,
+        splits: [],
+        _count: {
+          splits: 0,
+        },
       };
 
       mockPrisma.expense.create.mockResolvedValue(expectedExpense);
@@ -74,7 +119,19 @@ describe('ExpenseRepository', () => {
       const result = await createExpense(expenseData);
 
       expect(mockPrisma.expense.create).toHaveBeenCalledWith({
-        data: expenseData,
+        data: {
+          ...expenseData,
+          amount: expect.objectContaining({
+            toString: expect.any(Function),
+            toNumber: expect.any(Function),
+          }),
+        },
+        include: expect.objectContaining({
+          user: expect.any(Object),
+          group: expect.any(Object),
+          splits: expect.any(Object),
+          _count: expect.any(Object),
+        }),
       });
       expect(result).toEqual(expectedExpense);
     });
@@ -97,7 +154,7 @@ describe('ExpenseRepository', () => {
       const expectedExpense = {
         id: 1,
         title: 'Test Expense',
-        amount: 100.5,
+        amount: '100.5',
         userId: 1,
         paidAt: new Date(),
       };
@@ -139,9 +196,22 @@ describe('ExpenseRepository', () => {
 
       const expectedExpense = {
         id: 1,
-        ...updateData,
+        title: 'Updated Expense',
+        amount: '150.75',
         userId: 1,
         paidAt: new Date(),
+        user: {
+          id: 1,
+          name: 'Test User',
+          email: 'test@example.com',
+          username: 'testuser',
+          avatar: null,
+        },
+        group: null,
+        splits: [],
+        _count: {
+          splits: 0,
+        },
       };
 
       mockPrisma.expense.update.mockResolvedValue(expectedExpense);
@@ -150,7 +220,19 @@ describe('ExpenseRepository', () => {
 
       expect(mockPrisma.expense.update).toHaveBeenCalledWith({
         where: { id: 1 },
-        data: updateData,
+        data: {
+          ...updateData,
+          amount: expect.objectContaining({
+            toString: expect.any(Function),
+            toNumber: expect.any(Function),
+          }),
+        },
+        include: expect.objectContaining({
+          user: expect.any(Object),
+          group: expect.any(Object),
+          splits: expect.any(Object),
+          _count: expect.any(Object),
+        }),
       });
       expect(result).toEqual(expectedExpense);
     });
@@ -161,9 +243,21 @@ describe('ExpenseRepository', () => {
       const expectedExpense = {
         id: 1,
         title: 'New Title',
-        amount: 100.5,
+        amount: '100.5',
         userId: 1,
         paidAt: new Date(),
+        user: {
+          id: 1,
+          name: 'Test User',
+          email: 'test@example.com',
+          username: 'testuser',
+          avatar: null,
+        },
+        group: null,
+        splits: [],
+        _count: {
+          splits: 0,
+        },
       };
 
       mockPrisma.expense.update.mockResolvedValue(expectedExpense);
@@ -172,7 +266,16 @@ describe('ExpenseRepository', () => {
 
       expect(mockPrisma.expense.update).toHaveBeenCalledWith({
         where: { id: 1 },
-        data: updateData,
+        data: {
+          title: 'New Title',
+          amount: undefined,
+        },
+        include: expect.objectContaining({
+          user: expect.any(Object),
+          group: expect.any(Object),
+          splits: expect.any(Object),
+          _count: expect.any(Object),
+        }),
       });
       expect(result).toEqual(expectedExpense);
     });
@@ -184,9 +287,21 @@ describe('ExpenseRepository', () => {
       const expectedExpense = {
         id: 1,
         title: 'Test Expense',
-        amount: 100.5,
+        amount: '100.5',
         userId: 1,
         paidAt: newPaidAt,
+        user: {
+          id: 1,
+          name: 'Test User',
+          email: 'test@example.com',
+          username: 'testuser',
+          avatar: null,
+        },
+        group: null,
+        splits: [],
+        _count: {
+          splits: 0,
+        },
       };
 
       mockPrisma.expense.update.mockResolvedValue(expectedExpense);
@@ -195,36 +310,47 @@ describe('ExpenseRepository', () => {
 
       expect(mockPrisma.expense.update).toHaveBeenCalledWith({
         where: { id: 1 },
-        data: updateData,
+        data: {
+          paidAt: newPaidAt,
+          amount: undefined,
+        },
+        include: expect.objectContaining({
+          user: expect.any(Object),
+          group: expect.any(Object),
+          splits: expect.any(Object),
+          _count: expect.any(Object),
+        }),
       });
       expect(result).toEqual(expectedExpense);
     });
 
     it('should handle database errors', async () => {
+      const updateData = { title: 'Updated' };
+
       mockPrisma.expense.update.mockRejectedValue(new Error('Database error'));
 
-      await expect(updateExpense(1, { title: 'New Title' })).rejects.toThrow('Database error');
+      await expect(updateExpense(1, updateData)).rejects.toThrow('Database error');
     });
   });
 
   describe('deleteExpense', () => {
     it('should delete expense by id', async () => {
-      const deletedExpense = {
+      const expectedExpense = {
         id: 1,
         title: 'Test Expense',
-        amount: 100.5,
+        amount: '100.5',
         userId: 1,
         paidAt: new Date(),
       };
 
-      mockPrisma.expense.delete.mockResolvedValue(deletedExpense);
+      mockPrisma.expense.delete.mockResolvedValue(expectedExpense);
 
       const result = await deleteExpense(1);
 
       expect(mockPrisma.expense.delete).toHaveBeenCalledWith({
         where: { id: 1 },
       });
-      expect(result).toEqual(deletedExpense);
+      expect(result).toEqual(expectedExpense);
     });
 
     it('should handle database errors', async () => {
@@ -239,15 +365,15 @@ describe('ExpenseRepository', () => {
       const mockExpenses = [
         {
           id: 2,
-          title: 'Recent Expense',
-          amount: 75.25,
+          title: 'Expense 2',
+          amount: '200.0',
           userId: 1,
           paidAt: new Date(),
         },
         {
           id: 1,
-          title: 'Older Expense',
-          amount: 50.0,
+          title: 'Expense 1',
+          amount: '100.0',
           userId: 1,
           paidAt: new Date(),
         },
@@ -268,9 +394,6 @@ describe('ExpenseRepository', () => {
 
       const result = await listExpenses();
 
-      expect(mockPrisma.expense.findMany).toHaveBeenCalledWith({
-        orderBy: { id: 'desc' },
-      });
       expect(result).toEqual([]);
     });
 

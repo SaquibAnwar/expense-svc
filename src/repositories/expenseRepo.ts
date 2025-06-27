@@ -12,6 +12,7 @@ export interface CreateExpenseData {
   amount: number | Decimal;
   userId: number;
   groupId?: number;
+  categoryId?: number;
   paidAt?: Date;
 }
 
@@ -19,6 +20,7 @@ export interface UpdateExpenseData {
   title?: string;
   description?: string;
   amount?: number | Decimal;
+  categoryId?: number;
   paidAt?: Date;
 }
 
@@ -35,6 +37,13 @@ export interface ExpenseWithDetails extends Expense {
     name: string;
     description: string | null;
     avatar: string | null;
+  } | null;
+  category?: {
+    id: number;
+    name: string;
+    description: string | null;
+    icon: string;
+    color: string;
   } | null;
   splits: Array<{
     id: number;
@@ -57,6 +66,7 @@ export interface ExpenseWithDetails extends Expense {
 export interface ExpenseFilters {
   userId?: number;
   groupId?: number;
+  categoryId?: number;
   title?: string; // Search in title
   description?: string; // Search in description
   minAmount?: number;
@@ -103,6 +113,15 @@ export async function createExpense(data: CreateExpenseData): Promise<ExpenseWit
           avatar: true,
         },
       },
+      category: {
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          icon: true,
+          color: true,
+        },
+      },
       splits: {
         include: {
           user: {
@@ -144,6 +163,15 @@ export async function getExpenseById(id: number): Promise<ExpenseWithDetails | n
           name: true,
           description: true,
           avatar: true,
+        },
+      },
+      category: {
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          icon: true,
+          color: true,
         },
       },
       splits: {
@@ -207,6 +235,15 @@ export async function updateExpense(
           name: true,
           description: true,
           avatar: true,
+        },
+      },
+      category: {
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          icon: true,
+          color: true,
         },
       },
       splits: {

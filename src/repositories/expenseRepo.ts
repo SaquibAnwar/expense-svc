@@ -1,5 +1,6 @@
 // src/repositories/expenseRepo.ts
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Expense, SplitType } from '@prisma/client';
+import { Decimal } from '@prisma/client/runtime/library';
 
 const prisma = new PrismaClient();
 
@@ -7,35 +8,13 @@ interface CreateExpenseData {
   title: string;
   amount: number;
   userId: number;
-<<<<<<< Updated upstream
-=======
   groupId?: number;
   categoryId?: number;
->>>>>>> Stashed changes
   paidAt?: Date;
 }
 
 interface UpdateExpenseData {
   title?: string;
-<<<<<<< Updated upstream
-  amount?: number;
-  paidAt?: Date;
-}
-
-/** Create a new expense */
-export async function createExpense(data: CreateExpenseData) {
-  return prisma.expense.create({ data });
-}
-
-/** Get one expense by primary key */
-export async function getExpense(id: number) {
-  return prisma.expense.findUnique({ where: { id } });
-}
-
-/** Update an expense (partial fields allowed) */
-export async function updateExpense(id: number, data: UpdateExpenseData) {
-  return prisma.expense.update({ where: { id }, data });
-=======
   description?: string;
   amount?: number | Decimal;
   categoryId?: number;
@@ -283,7 +262,6 @@ export async function updateExpense(
       },
     },
   });
->>>>>>> Stashed changes
 }
 
 /** Delete an expense */

@@ -49,9 +49,12 @@ describe('ExpenseRepository', () => {
 
       const result = await createExpense(expenseData);
 
-      expect(mockPrisma.expense.create).toHaveBeenCalledWith({
-        data: expenseData,
-      });
+      expect(mockPrisma.expense.create).toHaveBeenCalledTimes(1);
+      const createCall = mockPrisma.expense.create.mock.calls[0][0];
+      expect(createCall.data.title).toBe(expenseData.title);
+      expect(createCall.data.userId).toBe(expenseData.userId);
+      expect(createCall.data.amount.toString()).toBe('100.5'); // Decimal conversion
+      expect(createCall.include).toBeDefined(); // Has include structure
       expect(result).toEqual(expectedExpense);
     });
 
@@ -73,9 +76,13 @@ describe('ExpenseRepository', () => {
 
       const result = await createExpense(expenseData);
 
-      expect(mockPrisma.expense.create).toHaveBeenCalledWith({
-        data: expenseData,
-      });
+      expect(mockPrisma.expense.create).toHaveBeenCalledTimes(1);
+      const createCall = mockPrisma.expense.create.mock.calls[0][0];
+      expect(createCall.data.title).toBe(expenseData.title);
+      expect(createCall.data.userId).toBe(expenseData.userId);
+      expect(createCall.data.paidAt).toBe(expenseData.paidAt);
+      expect(createCall.data.amount.toString()).toBe('100.5'); // Decimal conversion
+      expect(createCall.include).toBeDefined(); // Has include structure
       expect(result).toEqual(expectedExpense);
     });
 
@@ -148,10 +155,12 @@ describe('ExpenseRepository', () => {
 
       const result = await updateExpense(1, updateData);
 
-      expect(mockPrisma.expense.update).toHaveBeenCalledWith({
-        where: { id: 1 },
-        data: updateData,
-      });
+      expect(mockPrisma.expense.update).toHaveBeenCalledTimes(1);
+      const updateCall = mockPrisma.expense.update.mock.calls[0][0];
+      expect(updateCall.where.id).toBe(1);
+      expect(updateCall.data.title).toBe(updateData.title);
+      expect(updateCall.data.amount.toString()).toBe('150.75'); // Decimal conversion
+      expect(updateCall.include).toBeDefined(); // Has include structure
       expect(result).toEqual(expectedExpense);
     });
 
@@ -170,10 +179,16 @@ describe('ExpenseRepository', () => {
 
       const result = await updateExpense(1, updateData);
 
-      expect(mockPrisma.expense.update).toHaveBeenCalledWith({
-        where: { id: 1 },
-        data: updateData,
-      });
+      expect(mockPrisma.expense.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 1 },
+          data: expect.objectContaining({
+            title: updateData.title,
+            amount: undefined, // No amount conversion
+          }),
+          include: expect.any(Object), // Enhanced include structure exists
+        })
+      );
       expect(result).toEqual(expectedExpense);
     });
 
@@ -193,10 +208,16 @@ describe('ExpenseRepository', () => {
 
       const result = await updateExpense(1, updateData);
 
-      expect(mockPrisma.expense.update).toHaveBeenCalledWith({
-        where: { id: 1 },
-        data: updateData,
-      });
+      expect(mockPrisma.expense.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 1 },
+          data: expect.objectContaining({
+            paidAt: updateData.paidAt,
+            amount: undefined, // No amount conversion
+          }),
+          include: expect.any(Object), // Enhanced include structure exists
+        })
+      );
       expect(result).toEqual(expectedExpense);
     });
 
@@ -239,15 +260,15 @@ describe('ExpenseRepository', () => {
       const mockExpenses = [
         {
           id: 2,
-          title: 'Recent Expense',
-          amount: 75.25,
+          title: 'Expense 2',
+          amount: 200,
           userId: 1,
           paidAt: new Date(),
         },
         {
           id: 1,
-          title: 'Older Expense',
-          amount: 50.0,
+          title: 'Expense 1',
+          amount: 100,
           userId: 1,
           paidAt: new Date(),
         },
